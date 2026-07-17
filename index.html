@@ -4,7 +4,7 @@
 <title>Production Tracker</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%232e4b44'/><path d='M12 34 32 16l20 18' stroke='%237fa173' stroke-width='6' fill='none'/><rect x='20' y='36' width='24' height='14' fill='%237fa173'/></svg>">
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--accent:#2e4b44;--sage:#7fa173;--paid:#0a7a33}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   /* password gate */
@@ -13,78 +13,87 @@
   .gatecard svg{width:240px;height:auto}
   .gatecard h1{font-size:16px;margin:6px 0 16px;letter-spacing:.02em}
   .gatecard input{width:100%;padding:9px;border:1px solid var(--line);border-radius:5px;font:inherit;text-align:center}
-  .gatecard button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:5px;background:var(--accent);color:#fff;font:700 13px Arial;cursor:pointer}
+  .gatecard button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:5px;background:var(--red);color:#fff;font:700 13px Arial;cursor:pointer}
   #gateerr{color:#b3261e;font-size:12px;margin-top:8px;min-height:15px}
-  /* layout */
-  .wrap{display:flex;gap:18px;max-width:1600px;margin:18px auto;padding:0 14px;align-items:flex-start}
-  @media (max-width:1100px){.wrap{flex-direction:column}.panel{width:100%!important}}
-  .panel{width:330px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
-  .panel h2{font-size:14px;margin:22px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
-  .brand{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-  .brand svg{width:108px;height:auto;flex-shrink:0}
-  .apptitle b{font-size:16px;letter-spacing:.01em}
-  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
-  .status{margin-top:8px;font-size:12px}
-  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
-  label.fld{display:block;font-size:11px;color:var(--grey);margin-top:9px}
-  .panel input[type=text],.panel input[type=number],.panel input[type=date],.panel input[type=password]{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font:inherit}
-  .panel input[type=number]{text-align:right}
-  .g2{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
-  .trow{display:flex;gap:6px;margin-top:7px}
-  .trow input[type=text]{flex:1}
-  .trow input[type=number]{width:112px}
-  .actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
-  .actions button{flex:1;padding:9px 6px;border:0;border-radius:5px;font:700 12.5px Arial;cursor:pointer;white-space:nowrap}
-  .go{background:var(--accent);color:#fff}
-  .alt{background:var(--bar);color:var(--ink)}
-  .actions input{display:none}
-  .pwbtn{margin-top:12px;width:100%;padding:8px;border:1px solid var(--line);background:#fff;border-radius:5px;color:var(--grey);cursor:pointer;font:inherit}
-  .pwbtn:hover{color:var(--ink);border-color:var(--grey)}
-  /* dashboard */
-  table.dash{width:100%;border-collapse:collapse;margin-top:4px}
-  table.dash td{padding:4px 2px;border-bottom:1px solid var(--bar);font-size:12.5px}
-  table.dash td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
-  table.dash tr.big td{font-size:14px}
-  table.dash td.pos{color:var(--paid)} table.dash td.neg{color:#b3261e}
-  table.lad{width:100%;border-collapse:collapse;margin-top:4px;font-size:11.5px}
-  table.lad th{color:var(--grey);font-weight:400;text-align:right;padding:2px;border-bottom:1px solid var(--line)}
-  table.lad th:first-child{text-align:left}
-  table.lad td{padding:3px 2px;border-bottom:1px solid var(--bar);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  table.lad td:first-child{text-align:left;white-space:normal}
-  table.lad tr.met td{color:var(--paid)}
-  /* grid */
-  .page{flex:1;min-width:0;background:#fff;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12px}
-  .toolbar select{padding:5px;border:1px solid var(--line);border-radius:4px;font:inherit}
-  .toolbar label{display:flex;align-items:center;gap:5px;color:var(--grey)}
-  .toolbar .count{margin-left:auto;color:var(--grey)}
-  .gridwrap{overflow-x:auto}
-  table.grid{border-collapse:collapse;width:100%;min-width:1180px}
-  table.grid th{position:sticky;top:0;background:var(--bar);font-size:11px;padding:6px 4px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:2px solid var(--line)}
-  table.grid th.num{text-align:right}
-  table.grid th .arrow{color:var(--accent)}
-  table.grid td{border-bottom:1px solid var(--bar);padding:1px 2px;white-space:nowrap}
-  table.grid input[type=text]{width:100%;min-width:60px;padding:3px 4px;border:1px solid transparent;border-radius:3px;font:inherit;background:transparent}
-  table.grid input[type=text]:hover,table.grid input[type=text]:focus{border-color:var(--line);background:#fbfbfc;outline:none}
-  table.grid td.money input{text-align:right;min-width:78px;font-variant-numeric:tabular-nums}
-  table.grid td.chk{text-align:center}
-  table.grid td.chk input{width:15px;height:15px;accent-color:var(--accent);vertical-align:middle}
-  table.grid td.paidchk input{accent-color:var(--paid)}
-  table.grid tr.pifrow td{background:#f2faf4}
-  table.grid td.money.ispaid input{color:var(--paid);text-decoration:line-through}
-  table.grid td.del{text-align:center}
-  table.grid td.del button{border:0;background:none;color:var(--grey);cursor:pointer;font-size:13px;padding:2px 6px}
-  table.grid td.del button:hover{color:#b3261e}
-  .addbtn{margin-top:10px;border:1px dashed var(--line);background:#fff;border-radius:4px;padding:7px 14px;color:var(--grey);cursor:pointer;font:inherit}
-  .addbtn:hover{color:var(--ink);border-color:var(--grey)}
-  .note{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+  /* page */
+  .wrap{max-width:1500px;margin:14px auto 24px;padding:16px 18px 24px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .head svg{width:92px;height:auto;flex-shrink:0}
+  .head b{font-size:17px}
+  .head .src{font-size:11px;color:var(--grey)}
+  .head input[type=search]{min-width:200px;padding:7px 11px;border:1px solid var(--line);border-radius:6px;font:inherit}
+  .btn{padding:7px 13px;border:1px solid var(--line);border-radius:6px;background:#fff;font:700 12px Arial;
+    color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{border-color:var(--salmon);color:var(--red)}
+  .btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+  .btn.primary:hover{background:#24403a;color:#fff}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line)}
+  table{border-collapse:collapse;width:100%;min-width:1240px;font-size:12px}
+  th,td{border-bottom:1px solid #eef1f4;border-right:1px solid #f3f5f7;padding:2px 4px;white-space:nowrap}
+  thead th{position:sticky;top:0;background:var(--bar);font-size:11px;text-align:left;z-index:1;border-bottom:2px solid var(--line);padding:6px 6px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td input[type=text],td input[type=number]{width:100%;border:1px solid transparent;background:transparent;
+    font:inherit;padding:3px 5px;border-radius:3px}
+  td input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+  td input:hover{border-color:var(--line)}
+  td input:focus{border-color:var(--salmon);background:#fff;outline:none}
+  td input.neg{color:#b3261e}
+  td.chk{text-align:center}
+  tr.pif td{background:#f0fdf4}
+  tr.ar td{background:#fffbeb}
+  .jobcell{font-weight:700}
+  .rowx{border:0;background:none;color:var(--grey);cursor:pointer;font-size:14px;padding:0 6px}
+  .rowx:hover{color:#b3261e}
+  tfoot td{background:var(--bar);font-weight:700;border-top:2px solid var(--ink);padding:6px}
+  .below{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  .savenote{font-size:11px;color:var(--grey)}
+  .savenote.saved{color:#0a7a33}
+  /* income overlook */
+  .ov{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:16px}
+  .ovbox{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .ovbox h4{margin:0 0 6px;font-size:12px;letter-spacing:.02em;color:var(--grey);text-transform:uppercase}
+  .ovrow{display:flex;justify-content:space-between;padding:2px 0;font-size:12.5px}
+  .ovrow b{font-variant-numeric:tabular-nums}
+  .ovrow.big b{color:var(--red);font-size:15px}
+  .ovrow input{width:96px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;font:inherit;text-align:right}
+  .ovrow input[type=date]{width:130px;text-align:left}
+  .targets{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+  .pay3{grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-top:10px}
+  .ovwide{grid-column:span 2}
+  @media(max-width:600px){.ovwide{grid-column:auto}}
+  .pipegrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .pipegrid h5{margin:0 0 3px;font-size:10.5px;letter-spacing:.02em;color:var(--grey);text-transform:uppercase}
+  .pipegrid .ovrow{gap:6px}
+  .pipegrid .ovrow input{width:72px}
+  .subst{table-layout:fixed;width:100%;min-width:0}
+  .subst td input{width:100%;box-sizing:border-box}
+  #tbl th[data-sort]{cursor:pointer;user-select:none}
+  #tbl th[data-sort]:hover{color:var(--red)}
+  #tbl th.sa::after{content:" ▲";font-size:9px}
+  #tbl th.sd::after{content:" ▼";font-size:9px}
+  .targets td,.targets th{padding:3px 6px;border-bottom:1px solid #eef1f4;text-align:right;font-variant-numeric:tabular-nums}
+  .targets th{color:var(--grey);font-size:10.5px}
+  .targets td:first-child,.targets th:first-child{text-align:left}
+  .targets td input{border:1px solid transparent;background:transparent;font:inherit;padding:2px 4px;border-radius:3px}
+  .targets td input:hover{border-color:var(--line)}
+  .targets td input:focus{border-color:var(--salmon);background:#fff;outline:none}
+  .targets td input[type=text]{width:100%;text-align:left}
+  .targets td input[type=number]{width:96px;text-align:right}
+  .mini{font-size:11px;color:var(--grey);margin-top:8px}
+  /* Active / PIF sub-tabs */
+  .subtabs{display:flex;gap:6px;margin:2px 0 10px}
+  .subtabs button{padding:7px 18px;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;
+    background:#f7f8f9;font:700 12.5px Arial;color:var(--grey);cursor:pointer}
+  .subtabs button span{font-weight:400;font-size:11px;margin-left:5px}
+  .subtabs button.on{background:#fff;color:var(--ink);border-bottom-color:var(--red)}
+  .subtabs button:hover{color:var(--ink)}
+  .pwbtn{margin-left:auto}
 </style></head><body>
 
 <!-- Vista Exterior Construction logo (vector, white background) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="vlogo" viewBox="0 0 900 650">
     <rect width="900" height="650" fill="#ffffff"/>
-    <!-- pines -->
     <g fill="#7fa173">
       <polygon points="140,300 118,352 162,352"/>
       <polygon points="140,332 108,398 172,398"/>
@@ -99,14 +108,11 @@
       <polygon points="256,376 220,452 292,452"/>
       <rect x="251" y="452" width="10" height="18"/>
     </g>
-    <!-- long front roof plane (sage) with dark fascia under it -->
     <polygon points="95,462 480,198 560,255 235,462" fill="#7fa173"/>
     <polygon points="120,470 548,257 568,272 165,478" fill="#2e4b44"/>
-    <!-- chimney -->
     <rect x="355" y="172" width="52" height="100" fill="#2e4b44"/>
     <rect x="344" y="156" width="74" height="20" fill="#2e4b44"/>
     <rect x="344" y="176" width="74" height="6" fill="#7fa173"/>
-    <!-- main gable -->
     <polygon points="505,205 330,462 690,462" fill="#2e4b44"/>
     <g fill="#7fa173">
       <rect x="468" y="330" width="32" height="32"/>
@@ -114,14 +120,11 @@
       <rect x="468" y="370" width="32" height="32"/>
       <rect x="508" y="370" width="32" height="32"/>
     </g>
-    <!-- right double gable (concentric chevrons) -->
     <polygon points="705,285 575,462 835,462" fill="#2e4b44"/>
     <polygon points="705,335 615,462 795,462" fill="#ffffff"/>
     <polygon points="705,368 648,462 762,462" fill="#7fa173"/>
     <polygon points="705,402 672,462 738,462" fill="#ffffff"/>
-    <!-- ground swoosh -->
     <path d="M70,492 Q460,452 850,492 L850,504 Q460,466 70,504 Z" fill="#7fa173"/>
-    <!-- wordmark -->
     <text x="450" y="575" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="64" letter-spacing="6" fill="#2e4b44">VISTA EXTERIOR</text>
     <text x="450" y="624" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" letter-spacing="13" fill="#40615a">CONSTRUCTION</text>
     <line x1="140" y1="613" x2="218" y2="613" stroke="#40615a" stroke-width="3"/>
@@ -141,312 +144,156 @@
 
 <div id="app" style="display:none">
 <div class="wrap">
-  <div class="panel">
-    <div class="brand">
-      <svg viewBox="0 0 900 650" role="img" aria-label="Vista Exterior Construction"><use href="#vlogo"/></svg>
-      <div class="apptitle"><b>Production Tracker</b><span>job money tracker · saves on this device</span></div>
-    </div>
-    <div class="status" id="status"></div>
-
-    <div class="actions">
-      <button class="alt" id="importbtn">Import CSV</button>
-      <input type="file" id="importfile" accept=".csv,text/csv">
-      <button class="go" id="exportbtn">Export CSV</button>
-      <button class="alt" id="clearbtn">Clear all</button>
-    </div>
-
-    <h2>Totals</h2>
-    <table class="dash" id="dash"></table>
-
-    <h2>Goals</h2>
-    <table class="lad" id="ladder"></table>
-
-    <h2>Settings</h2>
-    <div class="g2">
-      <label class="fld">Bank<input type="number" data-set="bank" step="100"></label>
-      <label class="fld">Monthly O/H<input type="number" data-set="monthly_oh" step="100"></label>
-      <label class="fld">Profit / job<input type="number" data-set="profit_per_roof" step="100"></label>
-      <label class="fld">Deadline<input type="date" data-set="deadline"></label>
-      <label class="fld">Pipeline jobs<input type="number" data-set="pipeline_jobs" step="1"></label>
-      <label class="fld">Pipeline avg<input type="number" data-set="pipeline_avg" step="100"></label>
-      <label class="fld">Pipeline 2 jobs<input type="number" data-set="pipeline_b_jobs" step="1"></label>
-      <label class="fld">Pipeline 2 avg<input type="number" data-set="pipeline_b_avg" step="100"></label>
-    </div>
-    <label class="fld" style="margin-top:12px">Goals (name / amount)</label>
-    <div id="targets"></div>
-    <button class="pwbtn" id="pwbtn">Change password…</button>
-
-    <div class="note">Check <b>ACV ✓</b> / <b>RCV ✓</b> when a payment lands — the amount
-    moves from “to collect” into “collected” without deleting the number. Both checked
-    auto-marks PIF. Data saves automatically in this browser only; Export CSV for backup
-    or to move devices.</div>
+  <div class="head">
+    <svg viewBox="0 0 900 650" role="img" aria-label="Vista Exterior Construction"><use href="#vlogo"/></svg>
+    <b>Production Tracker</b>
+    <span class="savenote" id="savenote">edits save automatically on this device</span>
+    <input type="search" id="q" placeholder="Filter name / rep / PO…" autocomplete="off">
+    <button class="btn primary" id="addrow">+ Add customer</button>
+    <button class="btn" id="exportcsv">⬇ Export CSV</button>
+    <label class="btn" style="cursor:pointer">⬆ Import CSV<input type="file" id="importcsv" accept=".csv" style="display:none"></label>
+  </div>
+  <div class="subtabs">
+    <button id="tab-active" class="on">Active <span id="cnt-active"></span></button>
+    <button id="tab-pif">PIF <span id="cnt-pif"></span></button>
+  </div>
+  <div class="tblwrap">
+    <table id="tbl">
+      <thead><tr>
+        <th style="min-width:150px" data-sort="name">Customer</th><th style="width:52px" data-sort="rep">Rep</th>
+        <th style="width:76px" data-sort="claim">Claim #</th><th style="width:76px" data-sort="po">PO #</th><th style="width:64px" data-sort="date">Date</th>
+        <th class="num" style="width:96px" data-sort="acv">ACV</th><th class="num" style="width:96px" data-sort="dep">Dep.</th>
+        <th class="num" style="width:96px" data-sort="mats">Mats</th><th class="num" style="width:96px" data-sort="labor">Labor</th>
+        <th style="min-width:130px" data-sort="notes">Notes</th><th style="width:40px" data-sort="installed">Inst.</th><th style="width:36px" data-sort="pif">PIF</th>
+        <th class="num" style="width:104px" data-sort="job">Job $ (ACV+Dep)</th><th style="width:36px"></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot><tr id="totviewrow"></tr><tr id="totrow"></tr></tfoot>
+    </table>
   </div>
 
-  <div class="page">
-    <div class="toolbar">
-      <select id="f_rep"><option value="">All reps</option></select>
-      <label><input type="checkbox" id="f_unpaid"> money still out</label>
-      <label><input type="checkbox" id="f_notinstalled"> not installed</label>
-      <span class="count" id="count"></span>
+  <div class="ov">
+    <div class="ovbox"><h4>Money in the book</h4>
+      <div class="ovrow"><span>Total ACV</span><b id="o_acv"></b></div>
+      <div class="ovrow"><span>Total depreciation</span><b id="o_dep"></b></div>
+      <div class="ovrow"><span>Total $ (ACV + Dep)</span><b id="o_gross"></b></div>
+      <div class="ovrow"><span>M + L (mats + labor)</span><b id="o_ml"></b></div>
+      <div class="ovrow"><span>$ − M+L</span><b id="o_net"></b></div>
+      <div class="ovrow"><span>Bank</span><input type="number" step="0.01" data-a="bank"></div>
+      <div class="ovrow big"><span>$$ total income</span><b id="o_inc"></b></div>
     </div>
-    <div class="gridwrap"><table class="grid" id="grid"></table></div>
-    <button class="addbtn" id="addrow">+ Add job</button>
+    <div class="ovbox"><h4>Accounts receivable</h4>
+      <div class="ovrow"><span>Jobs not PIF</span><b id="o_arn"></b></div>
+      <div class="ovrow big"><span>Job $ outstanding</span><b id="o_ar"></b></div>
+      <div class="ovrow"><span>…of which installed</span><b id="o_arinst"></b></div>
+      <div class="mini">Amber rows = installed but not paid in full — the collections list.</div>
+    </div>
+    <div class="ovbox"><h4>Overhead runway</h4>
+      <div class="ovrow"><span>Monthly cost to run</span><input type="number" step="0.01" data-a="oh"></div>
+      <div class="ovrow big"><span>Months of overhead</span><b id="o_months"></b></div>
+    </div>
+    <div class="ovbox ovwide"><h4>Pipeline projection</h4>
+      <div class="pipegrid">
+        <div><h5>Pipeline 1</h5>
+          <div class="ovrow"><span>In pipeline</span><input type="number" step="1" data-a="p1n"></div>
+          <div class="ovrow"><span>Avg profit $</span><input type="number" step="100" data-a="p1a"></div>
+          <div class="ovrow"><span>Projected</span><b id="o_p1"></b></div>
+        </div>
+        <div><h5>Pipeline 2</h5>
+          <div class="ovrow"><span>In pipeline</span><input type="number" step="1" data-a="p2n"></div>
+          <div class="ovrow"><span>Avg profit $</span><input type="number" step="100" data-a="p2a"></div>
+          <div class="ovrow"><span>Projected</span><b id="o_p2"></b></div>
+        </div>
+      </div>
+      <div class="ovrow big"><span>All-in (income + pipeline)</span><b id="o_oapi"></b></div>
+    </div>
+    <div class="ovbox" style="grid-column:1/-1"><h4>Goals</h4>
+      <div class="ovrow" style="max-width:760px;white-space:nowrap">
+        <span>Avg profit / job</span><input type="number" step="100" data-a="perRoof">
+        <span style="margin-left:14px">Deadline</span><input type="date" data-a="deadline">
+        <span style="margin-left:14px">Weeks left</span><b id="o_weeks"></b>
+        <span style="margin-left:14px">Jobs completed</span><b id="o_done" style="color:var(--red)"></b>
+      </div>
+      <table class="targets"><thead><tr>
+        <th>Target</th><th>Amount</th><th>Left to go</th><th>Jobs needed</th><th>Contracts / wk</th>
+      </tr></thead><tbody id="targets"></tbody></table>
+      <div class="mini">Target names and amounts are editable — click to change them. "Left to go" measures against $$ total income.</div>
+    </div>
+  </div>
+  <div class="ov pay3">
+    <div class="ovbox"><h4>Materials</h4>
+      <div class="ovrow"><span>Material total</span><input type="number" step="0.01" id="mat_total_in"></div>
+      <div class="ovrow"><span>Amount paid</span><input type="number" step="0.01" data-a="matPaid"></div>
+      <div class="ovrow big"><span>Amount owed</span><b id="mat_owed"></b></div>
+      <div class="mini">Total prefills from the Mats column (both tabs) — type your own number to override, clear it to go back to auto. Owed = total − paid.</div>
+    </div>
+    <div class="ovbox"><h4>Subs</h4>
+      <div class="ovrow"><span>Labor total</span><input type="number" step="0.01" id="subs_labor_in"></div>
+      <table class="targets subst"><thead><tr>
+        <th style="width:36%">Sub</th><th style="width:21%">Owed</th><th style="width:21%">Paid</th>
+        <th style="width:16%">Balance</th><th style="width:6%"></th>
+      </tr></thead><tbody id="subsbody"></tbody></table>
+      <div class="ovrow" style="margin-top:4px"><span>Total paid to subs</span><b id="subs_paid"></b></div>
+      <div class="ovrow big"><span>Amount owed to subs</span><b id="subs_owed"></b></div>
+      <button class="btn" id="addsub" style="margin-top:6px">+ Add sub</button>
+      <div class="mini">Labor total prefills from the Labor column — type to override, clear for auto.</div>
+    </div>
+    <div class="ovbox"><h4>Rep pay</h4>
+      <table class="targets subst"><thead><tr>
+        <th style="width:36%">Rep</th><th style="width:21%">Owed</th><th style="width:21%">Paid</th>
+        <th style="width:16%">Balance</th><th style="width:6%"></th>
+      </tr></thead><tbody id="repsbody"></tbody></table>
+      <div class="ovrow" style="margin-top:4px"><span>Total paid to reps</span><b id="reps_paid"></b></div>
+      <div class="ovrow big"><span>Amount owed to reps</span><b id="reps_owed"></b></div>
+      <button class="btn" id="addrep" style="margin-top:6px">+ Add rep</button>
+    </div>
+  </div>
+  <div class="below">
+    <button class="btn" id="clearall">Clear all rows</button>
+    <span class="mini">Everything you type lives only in this app (saved in this browser) — nothing is sent anywhere.
+      Export CSV regularly for backup or to move to another device.</span>
+    <button class="btn pwbtn" id="pwbtn">Change password…</button>
   </div>
 </div>
 </div>
 
 <script>
 "use strict";
-/* ---------------------------------------------------------------- pure logic
- * Job-row model, CSV import/export, and all dashboard math.
- * Paid tracking: every ACV / RCV amount keeps its value and gets a paid flag —
- * checking it moves the money from "to collect" into "collected" while the
- * gross totals stay put, so history is never lost.
- */
-window.production = (function () {
-  "use strict";
-
-  var round2 = function (x) { return Math.round((x + Number.EPSILON) * 100) / 100; };
-
-  // ---------------------------------------------------------------- money
-  function parseMoney(s) {
-    if (s == null) return null;
-    if (typeof s === "number") return isFinite(s) ? s : null;
-    var t = String(s).replace(/[$,\s]/g, "");
-    if (!t) return null;
-    var neg = false;
-    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
-    var v = parseFloat(t);
-    if (!isFinite(v)) return null;
-    return neg ? -v : v;
-  }
-
-  function fmtMoney(n) {
-    if (n == null || !isFinite(n)) return "";
-    var neg = n < 0;
-    var s = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return (neg ? "-$" : "$") + s;
-  }
-
-  // ---------------------------------------------------------------- rows
-  function blankRow() {
-    return { customer: "", rep: "", claim: "", po: "", date: "",
-             acv: null, acv_paid: false, dep: null, rcv_paid: false,
-             mats: null, labor: null, status: "", installed: false,
-             notes: "", todo: "", pif: false };
-  }
-
-  // ---------------------------------------------------------------- csv
-  // minimal RFC-4180 parser (quoted fields, embedded commas/newlines)
-  function parseCsv(text) {
-    var rows = [], row = [], cur = "", inQ = false;
-    for (var i = 0; i < text.length; i++) {
-      var c = text[i];
-      if (inQ) {
-        if (c === '"') {
-          if (text[i + 1] === '"') { cur += '"'; i++; }
-          else inQ = false;
-        } else cur += c;
-      } else if (c === '"') inQ = true;
-      else if (c === ",") { row.push(cur); cur = ""; }
-      else if (c === "\n" || c === "\r") {
-        if (c === "\r" && text[i + 1] === "\n") i++;
-        row.push(cur); rows.push(row); row = []; cur = "";
-      } else cur += c;
-    }
-    if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
-    return rows;
-  }
-
-  function csvField(v) {
-    var s = v == null ? "" : String(v);
-    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  }
-
-  var EXPORT_HEADER = ["Customer", "Rep", "Claim #", "PO #", "Date",
-                       "ACV", "ACV Paid", "RCV (Dep)", "RCV Paid",
-                       "Mats", "Labor", "Status", "Installed", "Notes", "To Do", "PIF"];
-
-  function exportCsv(rows) {
-    var out = [EXPORT_HEADER.join(",")];
-    for (var i = 0; i < rows.length; i++) {
-      var r = rows[i];
-      out.push([
-        r.customer, r.rep, r.claim, r.po, r.date,
-        r.acv == null ? "" : fmtMoney(r.acv), r.acv_paid ? "TRUE" : "FALSE",
-        r.dep == null ? "" : fmtMoney(r.dep), r.rcv_paid ? "TRUE" : "FALSE",
-        r.mats == null ? "" : fmtMoney(r.mats),
-        r.labor == null ? "" : fmtMoney(r.labor),
-        r.status, r.installed ? "YES" : "NO", r.notes, r.todo,
-        r.pif ? "TRUE" : "FALSE",
-      ].map(csvField).join(","));
-    }
-    return out.join("\n");
-  }
-
-  function truthy(s) {
-    var t = String(s == null ? "" : s).trim().toUpperCase();
-    return t === "TRUE" || t === "YES" || t === "Y" || t === "X" || t === "1";
-  }
-
-  function importCsv(text) {
-    var raw = parseCsv(text);
-    if (!raw.length) return { rows: [], warnings: ["empty file"], format: "unknown" };
-
-    var head = raw[0].map(function (h) { return String(h).trim(); });
-    if (head.indexOf("Customer") !== 0 || head.indexOf("ACV Paid") === -1)
-      return { rows: [], warnings: ["unrecognized header — expected this tracker's Export CSV layout"], format: "unknown" };
-
-    var rows = [], warnings = [], skipped = 0;
-    for (var i = 1; i < raw.length; i++) {
-      var rec = raw[i];
-      var r = blankRow();
-      var get = function (name) {
-        var j = head.indexOf(name);
-        return j > -1 && j < rec.length ? rec[j] : "";
-      };
-      r.customer = String(get("Customer")).trim();
-      if (!r.customer) { skipped++; continue; }
-      r.rep = String(get("Rep")).trim();
-      r.claim = String(get("Claim #")).trim();
-      r.po = String(get("PO #")).trim();
-      r.date = String(get("Date")).trim();
-      r.acv = parseMoney(get("ACV"));
-      r.acv_paid = truthy(get("ACV Paid"));
-      r.dep = parseMoney(get("RCV (Dep)"));
-      r.rcv_paid = truthy(get("RCV Paid"));
-      r.mats = parseMoney(get("Mats"));
-      r.labor = parseMoney(get("Labor"));
-      r.status = String(get("Status")).trim();
-      r.installed = truthy(get("Installed"));
-      r.notes = String(get("Notes")).trim();
-      r.todo = String(get("To Do")).trim();
-      r.pif = truthy(get("PIF"));
-      rows.push(r);
-    }
-    if (skipped) warnings.push(skipped + " empty row(s) skipped");
-    return { rows: rows, warnings: warnings, format: "tracker" };
-  }
-
-  // ---------------------------------------------------------------- settings
-  function defaultSettings() {
-    return {
-      bank: 0,
-      monthly_oh: 0,
-      profit_per_roof: 0,
-      pipeline_jobs: 0, pipeline_avg: 0,
-      pipeline_b_jobs: 0, pipeline_b_avg: 0,
-      deadline: "2026-12-31",
-      targets: [
-        { label: "Goal 1", amount: 100000 },
-        { label: "Goal 2", amount: 250000 },
-        { label: "Goal 3", amount: 500000 },
-        { label: "Goal 4", amount: 1000000 },
-      ],
-    };
-  }
-
-  // ---------------------------------------------------------------- math
-  function sum(rows, key) {
-    var t = 0;
-    for (var i = 0; i < rows.length; i++) t += rows[i][key] || 0;
-    return round2(t);
-  }
-
-  function computeTotals(rows, settings) {
-    var s = settings || defaultSettings();
-    var acv = sum(rows, "acv"), dep = sum(rows, "dep");
-    var mats = sum(rows, "mats"), labor = sum(rows, "labor");
-    var collected = 0;
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].acv_paid) collected += rows[i].acv || 0;
-      if (rows[i].rcv_paid) collected += rows[i].dep || 0;
-    }
-    collected = round2(collected);
-    var gross = round2(acv + dep);
-    var ml = round2(mats + labor);
-    var net = round2(gross - ml);
-    var cash = round2(net + (s.bank || 0));
-    var projA = round2((s.pipeline_jobs || 0) * (s.pipeline_avg || 0));
-    var projB = round2((s.pipeline_b_jobs || 0) * (s.pipeline_b_avg || 0));
-    return {
-      acv: acv, dep: dep, mats: mats, labor: labor,
-      ml: ml, gross: gross, net: net, bank: round2(s.bank || 0), cash: cash,
-      collected: collected, outstanding: round2(gross - collected),
-      months_oh: s.monthly_oh ? round2(cash / s.monthly_oh) : null,
-      projected_a: projA, projected_b: projB,
-      all_in: round2(cash + projA + projB),
-    };
-  }
-
-  // weeks (fractional, min 0) from `todayISO` to settings.deadline
-  function weeksUntil(deadline, todayISO) {
-    var ms = new Date(deadline + "T00:00:00Z") - new Date(todayISO + "T00:00:00Z");
-    return Math.max(0, ms / (7 * 24 * 3600 * 1000));
-  }
-
-  // Goals ladder: every rung is an absolute cumulative target; left = target −
-  // cash; jobs = left / profit-per-job; contracts/wk = jobs / weeks to deadline.
-  function goalsLadder(totals, settings, todayISO) {
-    var s = settings || defaultSettings();
-    var weeks = weeksUntil(s.deadline, todayISO);
-    return s.targets.map(function (t) {
-      var left = round2(t.amount - totals.cash);
-      var roofs = s.profit_per_roof ? Math.ceil(left / s.profit_per_roof) : null;
-      return {
-        label: t.label, amount: t.amount, left: left, roofs: roofs,
-        weeks: round2(weeks),
-        ctr_per_week: (roofs != null && weeks > 0) ? round2(roofs / weeks) : null,
-        met: left <= 0,
-      };
-    });
-  }
-
-  return {
-    parseMoney: parseMoney, fmtMoney: fmtMoney, round2: round2,
-    blankRow: blankRow,
-    parseCsv: parseCsv, importCsv: importCsv, exportCsv: exportCsv,
-    EXPORT_HEADER: EXPORT_HEADER,
-    defaultSettings: defaultSettings, computeTotals: computeTotals,
-    goalsLadder: goalsLadder, weeksUntil: weeksUntil,
-  };
-})();
-
-/* ---------------------------------------------------------------- app */
-const P = window.production;
-const $ = (id) => document.getElementById(id);
-const LS_KEY = "production_tracker_v1";
-const PW_KEY = "production_tracker_pw";
-const SS_KEY = "production_tracker_unlocked";
+const STORE = "vista_production_rows_v1";
+const A_STORE = "vista_ar_assumptions";
+const PW_KEY = "vista_tracker_pw";
+const SS_KEY = "vista_tracker_unlocked";
 const DEFAULT_PW = "Vista.123";
-
-let state = null;            // {rows, settings}
-let sortKey = null, sortDir = 1;
-let booted = false;
-
-// ---------------------------------------------------------------- password gate
-function currentPw() { try { return localStorage.getItem(PW_KEY) || DEFAULT_PW; } catch (e) { return DEFAULT_PW; } }
-
-function unlock() {
-  $("gate").style.display = "none";
-  $("app").style.display = "";
-  if (!booted) { booted = true; load(); renderSettings(); rerender(); }
+const $id = (x) => document.getElementById(x);
+const fmt = (n) => n == null ? "—" : "$" + n.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function esc(s){const d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML;}
+function escAttr(s){return esc(s).replace(/"/g,"&quot;");}
+function money(s){
+  s = String(s == null ? "" : s).replace(/[$,\s]/g, "");
+  if (!s || s === "-") return null;
+  const v = parseFloat(s);
+  return Number.isFinite(v) ? v : null;
 }
 
-$("gateform").addEventListener("submit", (e) => {
+// ---- password gate ------------------------------------------------------
+function currentPw(){ try { return localStorage.getItem(PW_KEY) || DEFAULT_PW; } catch (e) { return DEFAULT_PW; } }
+function unlock(){
+  $id("gate").style.display = "none";
+  $id("app").style.display = "";
+}
+$id("gateform").addEventListener("submit", (e) => {
   e.preventDefault();
-  if ($("gatepw").value === currentPw()) {
+  if ($id("gatepw").value === currentPw()) {
     try { sessionStorage.setItem(SS_KEY, "1"); } catch (err) {}
-    $("gatepw").value = "";
+    $id("gatepw").value = "";
     unlock();
   } else {
-    $("gateerr").textContent = "Wrong password";
-    $("gatepw").value = "";
-    $("gatepw").focus();
+    $id("gateerr").textContent = "Wrong password";
+    $id("gatepw").value = "";
+    $id("gatepw").focus();
   }
 });
-
-$("pwbtn").addEventListener("click", () => {
+$id("pwbtn").addEventListener("click", () => {
   const cur = prompt("Current password:");
   if (cur == null) return;
   if (cur !== currentPw()) { alert("Wrong current password."); return; }
@@ -457,240 +304,431 @@ $("pwbtn").addEventListener("click", () => {
   if (again !== nw) { alert("Passwords didn't match — not changed."); return; }
   try { localStorage.setItem(PW_KEY, nw); } catch (e) { alert("Could not save password."); return; }
   alert("Password changed on this device/browser. Other devices keep their own password. " +
-        "If you forget it, clearing this site's browser data resets the password to the default — " +
-        "but that also erases the table, so keep CSV backups.");
+        "If you forget it, clearing this site's browser data resets it to the default — " +
+        "but that also erases the sheet, so keep CSV backups.");
 });
 
-// ---------------------------------------------------------------- persistence
-function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
-
-function load() {
-  try {
-    const s = localStorage.getItem(LS_KEY);
-    if (s) { state = JSON.parse(s); setStatus("Loaded from this device", true); return; }
-  } catch (e) {}
-  state = { rows: [], settings: P.defaultSettings() };
-  setStatus("Blank tracker — add your first job below", true);
-}
-
-function setStatus(msg, ok) {
-  const st = $("status");
-  st.className = "status " + (ok ? "ok" : "err");
-  st.textContent = msg;
-}
-
-// ---------------------------------------------------------------- grid
-const COLS = [
-  { key: "customer", label: "Customer", type: "text" },
-  { key: "rep", label: "Rep", type: "text" },
-  { key: "claim", label: "Claim #", type: "text" },
-  { key: "po", label: "PO #", type: "text" },
-  { key: "date", label: "Date", type: "text" },
-  { key: "acv", label: "ACV", type: "money" },
-  { key: "acv_paid", label: "ACV ✓", type: "paid" },
-  { key: "dep", label: "RCV (Dep)", type: "money" },
-  { key: "rcv_paid", label: "RCV ✓", type: "paid" },
-  { key: "mats", label: "Mats", type: "money" },
-  { key: "labor", label: "Labor", type: "money" },
-  { key: "status", label: "Status", type: "text" },
-  { key: "installed", label: "Installed", type: "chk" },
-  { key: "notes", label: "Notes", type: "text" },
-  { key: "todo", label: "To Do", type: "text" },
-  { key: "pif", label: "PIF", type: "chk" },
+// assumptions — saved per device
+const A_DEF = { bank: 0, oh: 0, p1n: 0, p1a: 0, p2n: 0, p2a: 0, perRoof: 0,
+                matPaid: 0, deadline: "2026-12-31" };
+let A = Object.assign({}, A_DEF, JSON.parse(localStorage.getItem(A_STORE) || "{}"));
+if (!Array.isArray(A.subs)) A.subs = [];   // [{name, owed, paid}] — the Subs payables list
+if (!Array.isArray(A.reps)) A.reps = [];   // same shape — the Rep pay list
+if (!Array.isArray(A.targets)) A.targets = [
+  { label: "Goal 1", amt: 100000 },
+  { label: "Goal 2", amt: 250000 },
+  { label: "Goal 3", amt: 500000 },
+  { label: "Goal 4", amt: 1000000 },
 ];
-
-function visibleRows() {
-  const rep = $("f_rep").value;
-  const unpaid = $("f_unpaid").checked;
-  const notinst = $("f_notinstalled").checked;
-  let idx = state.rows.map((r, i) => i).filter((i) => {
-    const r = state.rows[i];
-    if (rep && r.rep !== rep) return false;
-    if (unpaid && !(((r.acv || 0) !== 0 && !r.acv_paid) || ((r.dep || 0) !== 0 && !r.rcv_paid))) return false;
-    if (notinst && r.installed) return false;
-    return true;
+// matTotal / laborTotal: null = auto (from the sheet's Mats/Labor columns)
+if (A.matTotal === undefined) A.matTotal = null;
+if (A.laborTotal === undefined) A.laborTotal = null;
+function saveA(){ localStorage.setItem(A_STORE, JSON.stringify(A)); }
+document.querySelectorAll("input[data-a]").forEach((inp) => {
+  inp.value = A[inp.dataset.a];
+  inp.addEventListener("change", () => {
+    if (inp.type === "date") A[inp.dataset.a] = inp.value || A_DEF.deadline;
+    else {
+      const v = parseFloat(inp.value);
+      if (Number.isFinite(v)) A[inp.dataset.a] = v;
+    }
+    saveA();
+    renderSummary();
   });
-  if (sortKey) {
-    idx.sort((a, b) => {
-      const va = state.rows[a][sortKey], vb = state.rows[b][sortKey];
-      const na = va == null || va === "", nb = vb == null || vb === "";
-      if (na && nb) return 0; if (na) return 1; if (nb) return -1;
-      if (typeof va === "number" || typeof vb === "number") return ((va || 0) - (vb || 0)) * sortDir;
-      return String(va).localeCompare(String(vb), undefined, { sensitivity: "base" }) * sortDir;
+});
+
+let rows = [];
+let view = "active";   // "active" | "pif" — a display filter; ALL rows feed the equations
+let saveT = null;
+function save(){
+  localStorage.setItem(STORE, JSON.stringify(rows));
+  const n = $id("savenote");
+  n.textContent = "✓ saved " + new Date().toLocaleTimeString();
+  n.classList.add("saved");
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { n.textContent = "edits save automatically on this device"; n.classList.remove("saved"); }, 2500);
+}
+
+function rowClass(r){
+  const job = (r.acv || 0) + (r.dep || 0);
+  return r.pif ? "pif" : (r.installed && job > 0 ? "ar" : "");
+}
+
+const TXT = [["name","Customer"],["rep","Rep"],["claim","Claim #"],["po","PO #"],["date","Date"]];
+const NUM = ["acv","dep","mats","labor"];
+
+function setSubtabs(){
+  const nA = rows.filter((r) => !r.pif).length;
+  $id("cnt-active").textContent = "(" + nA + ")";
+  $id("cnt-pif").textContent = "(" + (rows.length - nA) + ")";
+  $id("tab-active").classList.toggle("on", view === "active");
+  $id("tab-pif").classList.toggle("on", view === "pif");
+}
+
+function renderTable(){
+  setSubtabs();
+  const tb = $id("tbody");
+  tb.innerHTML = rows.map((r, i) => {
+    if ((view === "pif") !== !!r.pif) return "";   // sub-tab view filter
+    const job = (r.acv || 0) + (r.dep || 0);
+    let h = '<tr class="' + rowClass(r) + '" data-i="' + i + '">';
+    TXT.forEach(([f]) => {
+      h += '<td><input type="text" data-i="' + i + '" data-f="' + f + '" value="' + escAttr(r[f] || "") + '"></td>';
     });
-  }
-  return idx;
-}
+    NUM.forEach((f) => {
+      const v = r[f];
+      h += '<td><input type="number" step="0.01" class="' + (v != null && v < 0 ? "neg" : "") + '" data-i="' + i +
+        '" data-f="' + f + '" value="' + (v == null ? "" : v) + '"></td>';
+    });
+    h += '<td><input type="text" data-i="' + i + '" data-f="notes" value="' + escAttr(r.notes || "") + '"></td>';
+    h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="installed"' + (r.installed ? " checked" : "") + '></td>';
+    h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="pif"' + (r.pif ? " checked" : "") + '></td>';
+    h += '<td class="num jobcell" id="job-' + i + '">' + (job ? fmt(job) : "") + '</td>';
+    h += '<td><button class="rowx" title="Delete row" data-x="' + i + '">×</button></td>';
+    h += "</tr>";
+    return h;
+  }).join("");
 
-function renderGrid() {
-  const g = $("grid");
-  const idx = visibleRows();
-  let h = "<thead><tr>";
-  for (const c of COLS) {
-    const arrow = sortKey === c.key ? ` <span class="arrow">${sortDir > 0 ? "▲" : "▼"}</span>` : "";
-    h += `<th class="${c.type === "money" ? "num" : ""}" data-sort="${c.key}">${c.label}${arrow}</th>`;
-  }
-  h += "<th></th></tr></thead><tbody>";
-  for (const i of idx) {
-    const r = state.rows[i];
-    h += `<tr data-i="${i}" class="${r.pif ? "pifrow" : ""}">`;
-    for (const c of COLS) {
-      if (c.type === "money") {
-        const paid = (c.key === "acv" && r.acv_paid) || (c.key === "dep" && r.rcv_paid);
-        h += `<td class="money ${paid ? "ispaid" : ""}"><input type="text" data-k="${c.key}" value="${r[c.key] == null ? "" : P.fmtMoney(r[c.key])}"></td>`;
-      } else if (c.type === "paid" || c.type === "chk") {
-        h += `<td class="chk ${c.type === "paid" ? "paidchk" : ""}"><input type="checkbox" data-k="${c.key}" ${r[c.key] ? "checked" : ""}></td>`;
-      } else {
-        const v = String(r[c.key] == null ? "" : r[c.key]).replace(/"/g, "&quot;");
-        h += `<td><input type="text" data-k="${c.key}" value="${v}"></td>`;
+  tb.querySelectorAll("input[data-f]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      if (f === "pif") {
+        // PIF moves the job to the other sub-tab; its numbers STAY in the
+        // totals and every equation below.
+        rows[i].pif = inp.checked;
+        save(); renderTable(); renderSummary();
+        return;
       }
-    }
-    h += `<td class="del"><button title="Delete row" data-del="${i}">✕</button></td></tr>`;
-  }
-  h += "</tbody>";
-  g.innerHTML = h;
-  $("count").textContent = idx.length + " of " + state.rows.length + " jobs";
-}
-
-function renderRepFilter() {
-  const sel = $("f_rep");
-  const cur = sel.value;
-  const reps = [...new Set(state.rows.map((r) => r.rep).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">All reps</option>' +
-    reps.map((r) => `<option${r === cur ? " selected" : ""}>${r}</option>`).join("");
-}
-
-// ---------------------------------------------------------------- dashboard
-function renderDash() {
-  const t = P.computeTotals(state.rows, state.settings);
-  const M = P.fmtMoney;
-  const row = (l, v, cls = "", big = false) =>
-    `<tr${big ? ' class="big"' : ""}><td>${l}</td><td class="num ${cls}">${v}</td></tr>`;
-  $("dash").innerHTML =
-    row("ACV", M(t.acv)) + row("RCV (Dep)", M(t.dep)) +
-    row("Gross $", M(t.gross)) +
-    row("Collected ✓", M(t.collected), "pos") +
-    row("To collect", M(t.outstanding), t.outstanding > 0 ? "" : "pos") +
-    row("Mats + Labor", M(t.ml)) +
-    row("$ − ML", M(t.net)) + row("Bank", M(t.bank)) +
-    row("$$ Total", M(t.cash), t.cash >= 0 ? "pos" : "neg", true) +
-    row("Months of O/H", t.months_oh == null ? "—" : t.months_oh.toFixed(1)) +
-    row("Pipeline proj.", M(t.projected_a)) +
-    row("+ Pipeline 2", M(t.projected_b)) +
-    row("All-in proj.", M(t.all_in), "", true);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const lad = P.goalsLadder(t, state.settings, today);
-  $("ladder").innerHTML =
-    "<tr><th>Goal</th><th>Left</th><th>Jobs</th><th>/wk</th></tr>" +
-    lad.map((g) =>
-      `<tr class="${g.met ? "met" : ""}"><td>${String(g.label).replace(/</g, "&lt;")}</td>` +
-      `<td>${g.met ? "MET ✓" : M(g.left)}</td>` +
-      `<td>${g.met || g.roofs == null ? "—" : g.roofs}</td>` +
-      `<td>${g.met || g.ctr_per_week == null ? "—" : g.ctr_per_week.toFixed(2)}</td></tr>`).join("");
-}
-
-function renderSettings() {
-  document.querySelectorAll("[data-set]").forEach((inp) => {
-    inp.value = state.settings[inp.dataset.set];
+      if (inp.type === "checkbox") rows[i][f] = inp.checked;
+      else if (inp.type === "number") {
+        // $ changes need approval before they hard-change the sheet
+        const old = rows[i][f];
+        const nv = money(inp.value);
+        const who = rows[i].name || ("row " + (i + 1));
+        if (!confirm("Approve $ change?\n\n" + who + " — " + f.toUpperCase() +
+                     ": " + fmt(old) + "  →  " + fmt(nv))) {
+          inp.value = old == null ? "" : old;
+          inp.classList.toggle("neg", old != null && old < 0);
+          return;
+        }
+        rows[i][f] = nv;
+      }
+      else rows[i][f] = inp.value;
+      if (inp.type === "number") inp.classList.toggle("neg", rows[i][f] != null && rows[i][f] < 0);
+      const job = (rows[i].acv || 0) + (rows[i].dep || 0);
+      $id("job-" + i).textContent = job ? fmt(job) : "";
+      inp.closest("tr").className = rowClass(rows[i]);
+      save(); renderTotals(); renderSummary();
+    });
   });
-  $("targets").innerHTML = state.settings.targets.map((t, i) =>
-    `<div class="trow"><input type="text" data-tlabel="${i}" value="${String(t.label).replace(/"/g, "&quot;")}">` +
-    `<input type="number" data-target="${i}" step="1000" value="${t.amount}"></div>`).join("");
+  tb.querySelectorAll("button[data-x]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = +btn.dataset.x;
+      const nm = rows[i].name || "(blank row)";
+      if (!confirm("Delete " + nm + " from the sheet?")) return;
+      rows.splice(i, 1);
+      save(); renderTable(); renderTotals(); renderSummary(); applyFilter();
+    });
+  });
+  renderTotals();
+  applyFilter();
 }
 
-function rerender() { renderRepFilter(); renderGrid(); renderDash(); }
+function applyFilter(){
+  const f = ($id("q").value || "").trim().toLowerCase();
+  document.querySelectorAll("#tbody tr").forEach((tr) => {
+    const r = rows[+tr.dataset.i];
+    if (!r) return;
+    const hay = ((r.name || "") + " " + (r.rep || "") + " " + (r.claim || "") + " " + (r.po || "")).toLowerCase();
+    tr.style.display = (!f || hay.indexOf(f) !== -1) ? "" : "none";
+  });
+}
 
-// ---------------------------------------------------------------- events
-$("grid").addEventListener("change", (e) => {
+function totals(){
+  const t = { acv: 0, dep: 0, mats: 0, labor: 0, arJobs: 0, arAmt: 0, arInst: 0 };
+  rows.forEach((r) => {
+    t.acv += r.acv || 0; t.dep += r.dep || 0; t.mats += r.mats || 0; t.labor += r.labor || 0;
+    const job = (r.acv || 0) + (r.dep || 0);
+    if (!r.pif && job > 0) { t.arJobs++; t.arAmt += job; if (r.installed) t.arInst += job; }
+  });
+  return t;
+}
+function renderTotals(){
+  const v = { acv: 0, dep: 0, mats: 0, labor: 0 };
+  rows.forEach((r) => {
+    if ((view === "pif") !== !!r.pif) return;
+    v.acv += r.acv || 0; v.dep += r.dep || 0; v.mats += r.mats || 0; v.labor += r.labor || 0;
+  });
+  $id("totviewrow").innerHTML = "<td style='font-weight:400;color:#81888e'>" +
+    (view === "pif" ? "PIF" : "ACTIVE") + " subtotal</td><td></td><td></td><td></td><td></td>" +
+    '<td class="num" style="font-weight:400">' + fmt(v.acv) + '</td><td class="num" style="font-weight:400">' + fmt(v.dep) + "</td>" +
+    '<td class="num" style="font-weight:400">' + fmt(v.mats) + '</td><td class="num" style="font-weight:400">' + fmt(v.labor) + "</td>" +
+    '<td></td><td></td><td></td><td class="num" style="font-weight:400">' + fmt(v.acv + v.dep) + "</td><td></td>";
+  const t = totals();
+  $id("totrow").innerHTML = "<td>TOTALS (all jobs → equations)</td><td></td><td></td><td></td><td></td>" +
+    '<td class="num">' + fmt(t.acv) + '</td><td class="num">' + fmt(t.dep) + "</td>" +
+    '<td class="num">' + fmt(t.mats) + '</td><td class="num">' + fmt(t.labor) + "</td>" +
+    '<td></td><td></td><td></td><td class="num">' + fmt(t.acv + t.dep) + "</td><td></td>";
+}
+
+function weeksLeft(){
+  const now = new Date();
+  const d = new Date((A.deadline || A_DEF.deadline) + "T23:59:59");
+  return Math.max(0, Math.round((d - now) / (7 * 86400000)));
+}
+
+function renderSummary(){
+  const t = totals();
+  const gross = t.acv + t.dep;
+  const ml = t.mats + t.labor;
+  const net = gross - ml;
+  const inc = net + A.bank;
+  $id("o_acv").textContent = fmt(t.acv);
+  $id("o_dep").textContent = fmt(t.dep);
+  $id("o_gross").textContent = fmt(gross);
+  $id("o_ml").textContent = fmt(ml);
+  $id("o_net").textContent = fmt(net);
+  $id("o_inc").textContent = fmt(inc);
+  $id("o_arn").textContent = t.arJobs + " jobs";
+  $id("o_ar").textContent = fmt(t.arAmt);
+  $id("o_arinst").textContent = fmt(t.arInst);
+  $id("o_months").textContent = A.oh > 0 ? (inc / A.oh).toFixed(1) + " months" : "—";
+  const p1 = A.p1n * A.p1a, p2 = A.p2n * A.p2a;
+  $id("o_p1").textContent = fmt(p1);
+  $id("o_p2").textContent = fmt(p2);
+  $id("o_oapi").textContent = fmt(inc + p1 + p2);
+  const wks = weeksLeft();
+  $id("o_weeks").textContent = wks + " wks";
+  // Jobs completed = Installed boxes checked, both tabs
+  $id("o_done").textContent = rows.filter((r) => r.installed).length;
+  $id("targets").innerHTML = A.targets.map((tg, i) => {
+    const left = tg.amt - inc;
+    const done = left <= 0;
+    const roofs = A.perRoof > 0 ? Math.ceil(left / A.perRoof) : null;
+    const ctr = wks > 0 && A.perRoof > 0 ? (left / A.perRoof / wks) : null;
+    return '<tr><td><input type="text" data-tg="' + i + '" data-tf="label" value="' + escAttr(tg.label) + '"></td>' +
+      '<td><input type="number" step="1000" data-tg="' + i + '" data-tf="amt" value="' + (tg.amt || 0) + '"></td>' +
+      "<td>" + (done ? "✓ hit" : fmt(left)) + "</td>" +
+      "<td>" + (done || roofs == null ? "—" : roofs) + "</td><td>" + (done || ctr == null ? "—" : ctr.toFixed(2)) + "</td></tr>";
+  }).join("");
+  renderPayables();
+}
+$id("targets").addEventListener("change", (e) => {
   const inp = e.target;
-  const tr = inp.closest("tr");
-  if (!tr || !inp.dataset.k) return;
-  const r = state.rows[+tr.dataset.i];
-  const col = COLS.find((c) => c.key === inp.dataset.k);
-  if (col.type === "money") r[col.key] = P.parseMoney(inp.value);
-  else if (col.type === "paid" || col.type === "chk") r[col.key] = inp.checked;
-  else r[col.key] = inp.value.trim();
-  if (r.acv_paid && r.rcv_paid) r.pif = true;   // both payments in -> paid in full
-  save(); rerender();
+  if (inp.dataset.tg == null) return;
+  const tg = A.targets[+inp.dataset.tg];
+  if (inp.dataset.tf === "label") tg.label = inp.value;
+  else tg.amt = parseFloat(inp.value) || 0;
+  saveA(); renderSummary();
 });
 
-$("grid").addEventListener("click", (e) => {
-  const del = e.target.dataset && e.target.dataset.del;
-  if (del != null) {
-    const r = state.rows[+del];
-    if (confirm(`Delete row "${r.customer || "(blank)"}"? With the paid checkboxes you don't need to delete a row to mark it collected.`)) {
-      state.rows.splice(+del, 1); save(); rerender();
-    }
-    return;
+// ---- payables: Materials + Subs (labor) + Rep pay -----------------------
+// Reference boxes only — they read the sheet's Mats/Labor totals but feed
+// nothing back into the income equations above. The material total and
+// Subs labor total prefill from the sheet; typing a number overrides,
+// clearing the field goes back to auto.
+function renderPayables(){
+  const t = totals();
+  const matTotal = A.matTotal != null ? A.matTotal : t.mats;
+  const laborTotal = A.laborTotal != null ? A.laborTotal : t.labor;
+  const matIn = $id("mat_total_in"), labIn = $id("subs_labor_in");
+  if (document.activeElement !== matIn) matIn.value = Math.round(matTotal * 100) / 100;
+  if (document.activeElement !== labIn) labIn.value = Math.round(laborTotal * 100) / 100;
+  $id("mat_owed").textContent = fmt(matTotal - (A.matPaid || 0));
+  for (const L of PAY_LISTS) {
+    let owed = 0, paid = 0;
+    A[L.key].forEach((s, i) => {
+      owed += s.owed || 0; paid += s.paid || 0;
+      const el = $id(L.key + "bal-" + i);
+      if (el) el.textContent = fmt((s.owed || 0) - (s.paid || 0));
+    });
+    $id(L.paidId).textContent = fmt(paid);
+    $id(L.owedId).textContent = fmt(owed - paid);
   }
-  const th = e.target.closest("th");
-  if (th && th.dataset.sort) {
-    if (sortKey === th.dataset.sort) { if (sortDir === 1) sortDir = -1; else { sortKey = null; sortDir = 1; } }
-    else { sortKey = th.dataset.sort; sortDir = 1; }
-    renderGrid();
-  }
+}
+const PAY_LISTS = [
+  { key: "subs", bodyId: "subsbody", addId: "addsub", paidId: "subs_paid", owedId: "subs_owed",
+    label: "sub", placeholder: "Sub / crew" },
+  { key: "reps", bodyId: "repsbody", addId: "addrep", paidId: "reps_paid", owedId: "reps_owed",
+    label: "rep", placeholder: "Rep" },
+];
+function renderPayList(L){
+  const arr = A[L.key];
+  const tb = $id(L.bodyId);
+  tb.innerHTML = arr.map((s, i) =>
+    '<tr><td><input type="text" data-pk="' + L.key + '" data-si="' + i + '" data-sf="name" value="' + escAttr(s.name || "") + '" placeholder="' + L.placeholder + '"></td>' +
+    '<td><input type="number" step="0.01" data-pk="' + L.key + '" data-si="' + i + '" data-sf="owed" value="' + (s.owed == null ? "" : s.owed) + '"></td>' +
+    '<td><input type="number" step="0.01" data-pk="' + L.key + '" data-si="' + i + '" data-sf="paid" value="' + (s.paid == null ? "" : s.paid) + '"></td>' +
+    '<td id="' + L.key + 'bal-' + i + '"></td>' +
+    '<td><button class="rowx" title="Remove ' + L.label + '" data-sx="' + i + '">×</button></td></tr>'
+  ).join("") || '<tr><td style="text-align:left;color:var(--grey)" colspan="5">No ' + L.label + 's yet — add one below.</td></tr>';
+  tb.querySelectorAll("input[data-si]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const s = arr[+inp.dataset.si];
+      if (inp.dataset.sf === "name") s.name = inp.value;
+      else s[inp.dataset.sf] = money(inp.value);
+      saveA(); renderPayables();
+    });
+  });
+  tb.querySelectorAll("button[data-sx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const s = arr[+btn.dataset.sx];
+      if (!confirm("Remove " + (s.name || "this " + L.label) + " from the list?")) return;
+      arr.splice(+btn.dataset.sx, 1);
+      saveA(); renderPayList(L);
+    });
+  });
+  renderPayables();
+}
+PAY_LISTS.forEach((L) => {
+  $id(L.addId).addEventListener("click", () => {
+    A[L.key].push({ name: "", owed: null, paid: null });
+    saveA(); renderPayList(L);
+    const inps = document.querySelectorAll("#" + L.bodyId + ' input[data-sf="name"]');
+    if (inps.length) inps[inps.length - 1].focus();
+  });
+  renderPayList(L);
+});
+$id("mat_total_in").addEventListener("change", () => {
+  A.matTotal = money($id("mat_total_in").value);   // null (cleared) = auto
+  saveA(); renderPayables();
+  if (A.matTotal == null) $id("mat_total_in").value = Math.round(totals().mats * 100) / 100;
+});
+$id("subs_labor_in").addEventListener("change", () => {
+  A.laborTotal = money($id("subs_labor_in").value);
+  saveA(); renderPayables();
+  if (A.laborTotal == null) $id("subs_labor_in").value = Math.round(totals().labor * 100) / 100;
 });
 
-$("addrow").addEventListener("click", () => {
-  state.rows.push(P.blankRow());
-  sortKey = null;
-  save(); rerender();
-  const rows = $("grid").querySelectorAll("tbody tr");
-  const last = rows[rows.length - 1];
-  if (last) last.querySelector("input").focus();
-});
-
-["f_rep", "f_unpaid", "f_notinstalled"].forEach((id) => $(id).addEventListener("change", renderGrid));
-
-document.querySelector(".panel").addEventListener("change", (e) => {
-  const inp = e.target;
-  if (inp.dataset.set) {
-    state.settings[inp.dataset.set] = inp.type === "number" ? (+inp.value || 0) : inp.value;
-    save(); renderDash();
-  } else if (inp.dataset.target != null) {
-    state.settings.targets[+inp.dataset.target].amount = +inp.value || 0;
-    save(); renderDash();
-  } else if (inp.dataset.tlabel != null) {
-    state.settings.targets[+inp.dataset.tlabel].label = inp.value;
-    save(); renderDash();
-  }
-});
-
-$("exportbtn").addEventListener("click", () => {
-  const csv = P.exportCsv(state.rows);
+// ---- CSV export / import ------------------------------------------------
+const CSV_FIELDS = ["name","rep","claim","po","date","acv","dep","mats","labor","notes","installed","pif"];
+function exportCsv(){
+  const lines = [CSV_FIELDS.join(",")];
+  rows.forEach((r) => {
+    lines.push(CSV_FIELDS.map((f) => {
+      let v = r[f];
+      if (typeof v === "boolean") v = v ? "TRUE" : "FALSE";
+      v = v == null ? "" : String(v);
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(","));
+  });
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  a.download = "Production " + new Date().toISOString().slice(0, 10) + ".csv";
+  a.href = URL.createObjectURL(blob);
+  a.download = "Production Tracker " + new Date().toISOString().slice(0, 10) + ".csv";
   a.click();
   URL.revokeObjectURL(a.href);
+}
+function parseCsv(text){
+  const out = [];
+  let row = [], cur = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i+1] === "\n") i++;
+      row.push(cur); out.push(row); row = []; cur = "";
+    } else cur += c;
+  }
+  if (cur !== "" || row.length) { row.push(cur); out.push(row); }
+  return out;
+}
+function importCsv(text){
+  const cells = parseCsv(text);
+  if (!cells.length) return alert("Empty CSV.");
+  const hdr = cells[0].map((h) => h.trim().toLowerCase());
+  const idx = {};
+  CSV_FIELDS.forEach((f) => { idx[f] = hdr.indexOf(f); });
+  if (idx.name === -1) return alert("CSV needs a 'name' column (use Export CSV as the template).");
+  const imported = [];
+  for (let i = 1; i < cells.length; i++) {
+    const r = cells[i];
+    const g = (f) => idx[f] === -1 ? "" : (r[idx[f]] || "").trim();
+    if (!g("name")) continue;
+    imported.push({
+      name: g("name"), rep: g("rep"), claim: g("claim"), po: g("po"), date: g("date"),
+      acv: money(g("acv")), dep: money(g("dep")), mats: money(g("mats")), labor: money(g("labor")),
+      notes: g("notes"), installed: g("installed").toUpperCase() === "TRUE" || g("installed").toUpperCase() === "YES",
+      pif: g("pif").toUpperCase() === "TRUE",
+    });
+  }
+  if (!imported.length) return alert("No rows found in that CSV.");
+  if (!confirm("Replace the current " + rows.length + " rows with " + imported.length + " imported rows?")) return;
+  rows = imported;
+  save(); renderTable(); renderSummary();
+}
+
+// ---- column sorting -----------------------------------------------------
+// Click a header to sort A→Z, click again for Z→A. Sorting reorders the
+// saved sheet (blanks always sink to the bottom); totals/equations are
+// order-independent so nothing else moves.
+let sortF = null, sortDir = 1;
+function dateKey(s){
+  const m = String(s || "").match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  return m ? (m[3] ? +m[3] : 0) * 10000 + (+m[1]) * 100 + (+m[2]) : null;
+}
+function sortVal(r, f){
+  if (f === "job") { const j = (r.acv || 0) + (r.dep || 0); return j || null; }
+  if (f === "installed" || f === "pif") return r[f] ? 1 : 0;
+  if (["acv", "dep", "mats", "labor"].includes(f)) return r[f];
+  if (f === "date") return dateKey(r.date);
+  const s = String(r[f] || "").trim().toLowerCase();
+  return s || null;
+}
+document.querySelectorAll("#tbl thead th[data-sort]").forEach((th) => {
+  th.addEventListener("click", () => {
+    const f = th.dataset.sort;
+    sortDir = sortF === f ? -sortDir : 1;
+    sortF = f;
+    rows.sort((ra, rb) => {
+      const a = sortVal(ra, f), b = sortVal(rb, f);
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;               // blanks last, either direction
+      if (b == null) return -1;
+      return (a < b ? -1 : a > b ? 1 : 0) * sortDir;
+    });
+    document.querySelectorAll("#tbl thead th").forEach((t) => t.classList.remove("sa", "sd"));
+    th.classList.add(sortDir === 1 ? "sa" : "sd");
+    save(); renderTable();
+  });
 });
 
-$("importbtn").addEventListener("click", () => $("importfile").click());
-$("importfile").addEventListener("change", async (e) => {
+// ---- wiring -------------------------------------------------------------
+$id("q").addEventListener("input", applyFilter);
+$id("tab-active").addEventListener("click", () => { view = "active"; renderTable(); });
+$id("tab-pif").addEventListener("click", () => { view = "pif"; renderTable(); });
+$id("addrow").addEventListener("click", () => {
+  view = "active";   // new customers land on the Active tab
+  rows.unshift({ name: "", rep: "", claim: "", po: "", date: "",
+                 acv: null, dep: null, mats: null, labor: null, notes: "", installed: false, pif: false });
+  save(); renderTable(); renderSummary();
+  const first = document.querySelector('#tbody input[data-f="name"]');
+  if (first) first.focus();
+});
+$id("exportcsv").addEventListener("click", exportCsv);
+$id("importcsv").addEventListener("change", (e) => {
   const f = e.target.files[0];
   if (!f) return;
-  try {
-    const { rows, warnings } = P.importCsv(await f.text());
-    if (!rows.length) throw new Error(warnings.join("; ") || "no job rows found");
-    if (!confirm(`Import ${rows.length} jobs from ${f.name}? This replaces the current table.`)) return;
-    state.rows = rows;
-    save(); rerender();
-    setStatus(`Imported ${rows.length} jobs` + (warnings.length ? " · " + warnings.join("; ") : ""), true);
-  } catch (err) {
-    setStatus("Import failed: " + err.message, false);
-  }
+  f.text().then(importCsv);
   e.target.value = "";
 });
-
-$("clearbtn").addEventListener("click", () => {
-  if (!confirm("Erase ALL jobs and reset settings on this device? Export CSV first if unsure.")) return;
-  localStorage.removeItem(LS_KEY);
-  load();
-  rerender(); renderSettings();
+$id("clearall").addEventListener("click", () => {
+  if (!confirm("Delete ALL rows from the sheet? Export CSV first if unsure. (Assumptions, payables, and goals stay.)")) return;
+  rows = [];
+  localStorage.removeItem(STORE);
+  renderTable(); renderSummary();
 });
 
-// ---------------------------------------------------------------- boot
+function load(){
+  const saved = localStorage.getItem(STORE);
+  if (saved) { try { rows = JSON.parse(saved) || []; } catch (_) { rows = []; } }
+  renderTable(); renderSummary();
+}
+load();
 try { if (sessionStorage.getItem(SS_KEY) === "1") unlock(); } catch (e) {}
 </script>
 </body></html>
