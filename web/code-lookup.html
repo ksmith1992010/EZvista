@@ -1,0 +1,413 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista Code &amp; Supplement Lookup — Measure2Estimate</title>
+<link rel="icon" href="logo.png">
+<script src="pdf.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="roofparse.js"></script>
+<script src="supplements.js"></script>
+<style>
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
+  .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
+  .tabs a{padding:9px 18px;background:#f7f8f9;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+    font-weight:700;font-size:13px;color:var(--grey);text-decoration:none}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:#fff;color:var(--ink);border-top:3px solid var(--red);padding-top:7px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+  .tabs a span{font-weight:400;color:var(--grey);font-size:11px;margin-left:6px}
+  .wrap{display:flex;gap:18px;max-width:1340px;margin:0 auto 18px;padding:0 14px;align-items:flex-start}
+  @media (max-width:980px){.wrap{flex-direction:column}.panel{width:100%!important}}
+  .panel{width:400px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
+  .panel h2{font-size:14px;margin:26px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
+  .panel h2:first-of-type{margin-top:22px}
+  .brand{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .brand img{width:52px;height:auto}
+  .apptitle b{font-size:16px;letter-spacing:.01em}
+  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
+  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed .dropbig{color:var(--red)}
+  .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
+  .drop input{display:none}
+  .privacy{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+  .mini{font-size:11px;color:var(--grey);margin-top:6px}
+  .status{margin-top:8px;font-size:12px}
+  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
+  label.fld{display:block;font-size:11px;color:var(--grey);margin-top:10px}
+  input[type=text],input[type=number],select{width:100%;padding:6px 7px;border:1px solid var(--line);border-radius:4px;font:inherit}
+  .meas{background:#fbfbfc;border:1px solid var(--line);padding:8px 10px;font-size:12px;line-height:1.6;margin-top:10px}
+  .meas b{font-variant-numeric:tabular-nums}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .actions{margin-top:22px;display:flex;gap:8px}
+  .actions button{flex:1;padding:10px;border:0;border-radius:5px;font:700 13px Arial;cursor:pointer}
+  .go{background:var(--red);color:#fff}
+  .alt{background:var(--bar);color:var(--ink)}
+  .note{font-size:11px;color:var(--grey);line-height:1.5;margin-top:10px;background:#fbfbfc;border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+  /* results page */
+  .page{flex:1;min-width:0;background:#fff;padding:30px 36px 44px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .page h1{margin:0 0 2px;font-size:22px}
+  .subttl{color:var(--grey);font-size:12.5px;margin-bottom:6px}
+  .ahj{background:#fff8f7;border:1px solid var(--salmon);border-radius:6px;padding:9px 12px;font-size:12px;margin:12px 0 6px;color:#7a2a28}
+  .secbar{background:var(--bar);font-weight:700;font-size:15px;padding:8px 14px;margin-top:20px;display:flex;justify-content:space-between;align-items:center}
+  .secbar .cnt{font-weight:400;color:var(--grey);font-size:12px}
+  .item{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px}
+  .item.on{border-color:var(--salmon);background:#fff8f7}
+  .item .h{display:flex;align-items:center;gap:9px}
+  .item .h input[type=checkbox]{width:16px;height:16px;accent-color:var(--red)}
+  .item .nm{font-weight:700;font-size:13.5px}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
+  .badge.code{background:#ffe3e3;color:#b3261e}
+  .badge.standard{background:#e5eefc;color:#1f5bb5}
+  .badge.negotiable{background:#eef0f2;color:#6a7078}
+  .item .cite{margin-left:auto;font-size:11px;color:var(--grey);font-variant-numeric:tabular-nums}
+  .item .why{font-size:12px;color:#2a2a2a;margin:7px 0 0 25px;line-height:1.5}
+  .item .doc{font-size:11px;color:var(--grey);margin:5px 0 0 25px}
+  .item .qrow{display:flex;gap:14px;align-items:center;margin:8px 0 0 25px;font-size:12px;flex-wrap:wrap}
+  .item .qrow label{color:var(--grey);font-size:11px}
+  .item .qrow input{width:82px;padding:3px 6px;border:1px solid var(--line);border-radius:4px;font:inherit;text-align:right}
+  .item .qrow .ext{margin-left:auto;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums}
+  .cnote{margin:7px 0 0 25px;font-size:11.5px;color:#2a2a2a;background:#fbfbfc;border:1px dashed var(--line);border-radius:5px;padding:6px 9px}
+  .empty{color:var(--grey);text-align:center;padding:70px 0}
+  .disc{color:var(--grey);font-size:11px;line-height:1.6;margin-top:22px;border-top:1px solid var(--bar);padding-top:12px}
+</style></head><body><script src="gate.js"></script>
+<div class="tabs">
+  <a href="index.html">Estimate Creator <span>m2e</span></a>
+  <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
+  <a class="on" href="code-lookup.html">Code / Supplement Lookup <span>m2cs</span></a>
+  <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
+  <a href="customers.html">Production 25/26 <span>AR</span></a>
+</div>
+<div class="wrap">
+
+  <!-- ======================= controls ======================= -->
+  <div class="panel">
+    <div class="brand">
+      <img src="logo.png" alt="Vista Exterior Construction" id="logoimg">
+      <div class="apptitle"><b>Code &amp; Supplement Lookup</b>
+        <span>Find code upgrades &amp; supplements to add</span></div>
+    </div>
+
+    <h2>1 · Location</h2>
+    <label class="fld" for="city">Where is the property?</label>
+    <select id="city">
+      <option value="kcmo">Kansas City, MO</option>
+      <option value="sgfmo">Springfield, MO</option>
+      <option value="irc">Somewhere else (IRC default)</option>
+    </select>
+
+    <h2>2 · Carrier <span style="font-weight:400;color:var(--grey);font-size:11px">(optional)</span></h2>
+    <label class="fld" for="carrier">Insurance company</label>
+    <select id="carrier"></select>
+
+    <h2>3 · Damage report <span style="font-weight:400;color:var(--grey);font-size:11px">(optional)</span></h2>
+    <label class="drop" id="drdrop">
+      <input type="file" id="drfile" accept="application/pdf">
+      <div class="dropbig">Drop the insurance DR / scope PDF</div>
+      <div class="dropsub">or tap to choose — we'll read the address &amp; carrier if we can</div>
+    </label>
+    <div class="status" id="drstatus"></div>
+    <div class="privacy">Read entirely in your browser — the file never leaves this device.</div>
+
+    <h2>4 · Roof quantities <span style="font-weight:400;color:var(--grey);font-size:11px">(optional)</span></h2>
+    <label class="drop" id="mdrop">
+      <input type="file" id="mfile" accept="application/pdf">
+      <div class="dropbig">Drop the GAF QuickMeasure PDF</div>
+      <div class="dropsub">so quantities are exact — or type them below</div>
+    </label>
+    <div class="status" id="mstatus"></div>
+    <div class="meas" id="meas" hidden></div>
+    <div class="qgrid" style="margin-top:10px">
+      <div><label class="fld">Eaves (LF)</label><input type="number" id="q_eaves"></div>
+      <div><label class="fld">Rakes (LF)</label><input type="number" id="q_rakes"></div>
+      <div><label class="fld">Valleys (LF)</label><input type="number" id="q_valleys"></div>
+      <div><label class="fld">Squares (SQ)</label><input type="number" id="q_squares"></div>
+      <div><label class="fld">Step flashing (LF)</label><input type="number" id="q_step"></div>
+      <div><label class="fld">Penetrations</label><input type="number" id="q_pen"></div>
+    </div>
+
+    <div class="actions">
+      <button class="go" id="build">Show items</button>
+      <button class="alt" id="download">Download worksheet</button>
+    </div>
+    <div class="note">Every item here is meant to be a <b>legitimate, code-required or
+      actually-performed</b> line the carrier left out — with the citation and photo you
+      need to justify it. Quantities and prices are editable; nothing is auto-submitted.</div>
+  </div>
+
+  <!-- ======================= results ======================= -->
+  <div class="page" id="page"><div class="empty">Pick a location and press <b>Show items</b> to see the code upgrades and supplements for this job.</div></div>
+</div>
+
+<script>
+"use strict";
+const sup = window.supplements;
+const rp = window.roofparse;
+const $ = (id) => document.getElementById(id);
+const money = (x) => "$" + x.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const COMPANY = { name: "Vista Exterior Construction",
+  address: [], phone: "" };
+
+let drInfo = null;        // parsed carrier estimate (best-effort)
+let lastResult = null;    // last built {jurisdiction, items}
+let overrides = {};       // item key -> {qty, price, on}
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+
+// carrier dropdown
+(function () {
+  const sel = $("carrier");
+  sup.CARRIERS.forEach((c) => {
+    const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+  sel.value = "Other / Unknown";
+})();
+
+// ---- current measurement numbers from the manual fields ----
+function measFromFields() {
+  const g = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : null; };
+  return { eaves: g("q_eaves"), rakes: g("q_rakes"), valleys: g("q_valleys"),
+           squares: g("q_squares"), step_flashing: g("q_step"), penetrations: g("q_pen") };
+}
+
+// ---- PDF text extraction (mirrors the other tabs) ----
+async function extractText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const lines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const toks = tc.items.filter((it) => it.str && it.str.trim())
+      .map((it) => ({str: it.str.trim(), x: it.transform[4], y: it.transform[5]}));
+    const rows = [];
+    for (const t of toks) {
+      let ln = rows.find((l) => Math.abs(l.y - t.y) < 2.5);
+      if (!ln) { ln = {y: t.y, toks: []}; rows.push(ln); }
+      ln.toks.push(t);
+    }
+    rows.sort((a, b) => b.y - a.y);
+    for (const ln of rows) { ln.toks.sort((a, b) => a.x - b.x); lines.push(ln.toks.map((t) => t.str).join(" ")); }
+  }
+  return lines.join("\n");
+}
+
+// ---- damage report intake (confident-only prefill) ----
+async function handleDR(file) {
+  const st = $("drstatus"); st.className = "status"; st.textContent = "Reading " + file.name + " …";
+  try {
+    const text = await extractText(file);
+    drInfo = sup.parseCarrierText(text);
+    if (drInfo.carrier) $("carrier").value = sup.CARRIERS.includes(drInfo.carrier) ? drInfo.carrier : "Other / Unknown";
+    const got = [drInfo.carrier && "carrier", drInfo.claim_no && "claim #", drInfo.rcv_total != null && "RCV"].filter(Boolean);
+    st.className = "status " + (drInfo.has_text ? "ok" : "err");
+    st.textContent = drInfo.has_text
+      ? (got.length ? "Read " + got.join(", ") + " — confirm on screen." : "Loaded — no standard fields found, enter details as needed.")
+      : "Scanned/photo document — enter the location & carrier by hand (nothing guessed).";
+  } catch (e) { st.className = "status err"; st.textContent = "Could not read: " + e.message; }
+}
+
+// ---- measurement intake (exact quantities) ----
+async function handleMeasurement(file) {
+  const st = $("mstatus"); st.className = "status"; st.textContent = "Parsing " + file.name + " …";
+  try {
+    const text = await extractText(file);
+    const rm = rp.parseText(text);
+    fillFromMeasurement(rm);
+    const conf = Math.round((rm.source.confidence || 0) * 100);
+    st.className = "status " + (conf >= 80 ? "ok" : "err");
+    st.textContent = "Parsed — " + conf + "% of core fields captured.";
+  } catch (e) { st.className = "status err"; st.textContent = "Could not parse: " + e.message; }
+}
+
+function fillFromMeasurement(rm) {
+  const L = rm.lengths_ft, t = rm.totals, pen = rm.penetrations;
+  const set = (id, v) => { if (v != null) $(id).value = v; };
+  set("q_eaves", L.eaves); set("q_rakes", L.rakes); set("q_valleys", L.valleys);
+  set("q_squares", t.squares); set("q_step", L.step_flashing); set("q_pen", pen.count);
+  $("meas").hidden = false;
+  $("meas").innerHTML =
+    "Roof <b>" + (t.squares ?? "?") + "</b> SQ · Eaves <b>" + (L.eaves ?? "—") + "</b> · Rakes <b>" +
+    (L.rakes ?? "—") + "</b> · Valleys <b>" + (L.valleys ?? "—") + "</b> · Pitch <b>" + (t.predominant_pitch ?? "?") + "</b>";
+  if (lastResult) build();
+}
+
+// ---- build the ranked list ----
+function build() {
+  const res = sup.codeItemsFor($("city").value, measFromFields());
+  lastResult = res;
+  const carrier = $("carrier").value;
+  const j = res.jurisdiction;
+
+  const codeItems = res.items.filter((i) => i.tier === "code");
+  const otherItems = res.items.filter((i) => i.tier !== "code");
+
+  const card = (it) => {
+    const ov = overrides[it.key] || {};
+    const on = ov.on !== undefined ? ov.on : (it.tier === "code");
+    const qty = ov.qty !== undefined ? ov.qty : (it.qty ?? "");
+    const price = ov.price !== undefined ? ov.price : (it.price ?? "");
+    const ext = (qty !== "" && price !== "") ? money(sup.round2(parseFloat(qty) * parseFloat(price))) : "—";
+    const cnote = sup.carrierNote(carrier, it.key);
+    return '<div class="item ' + (on ? "on" : "") + '" data-k="' + it.key + '">' +
+      '<div class="h">' +
+        '<input type="checkbox" class="ck" ' + (on ? "checked" : "") + '>' +
+        '<span class="nm">' + it.name + '</span>' +
+        '<span class="badge ' + it.tier + '">' + it.tierLabel + '</span>' +
+        '<span class="cite">' + (it.code && it.code !== "—" ? it.code : "") + '</span>' +
+      '</div>' +
+      '<div class="why">' + it.why + '</div>' +
+      '<div class="doc">📎 Documentation to attach: ' + it.doc + '</div>' +
+      '<div class="qrow">' +
+        '<label>Qty</label><input type="number" class="q" value="' + qty + '">' +
+        '<span>' + it.unit + '</span>' +
+        '<label>Unit $</label><input type="number" class="p" value="' + price + '">' +
+        '<span class="ext">' + ext + '</span>' +
+      '</div>' +
+      (cnote ? '<div class="cnote"><b>' + carrier + ':</b> ' + cnote + '</div>' : "") +
+    '</div>';
+  };
+
+  $("page").innerHTML =
+    '<h1>Code &amp; Supplement Lookup</h1>' +
+    '<div class="subttl">' + j.name + (carrier && carrier !== "Other / Unknown" ? " · " + carrier : "") +
+      (drInfo && drInfo.claim_no ? " · Claim " + drInfo.claim_no : "") + '</div>' +
+    '<div class="ahj">⚠ ' + j.edition + '. Verify the exact code section &amp; amendment with the ' +
+      'Authority Having Jurisdiction before you cite it. ' + (j.notes || "") + '</div>' +
+    '<div class="secbar">Code-required upgrades <span class="cnt">' + codeItems.length + ' items · pre-checked</span></div>' +
+    codeItems.map(card).join("") +
+    '<div class="secbar">Supplements to consider <span class="cnt">' + otherItems.length + ' items</span></div>' +
+    otherItems.map(card).join("") +
+    '<div class="disc">Suggested quantities come from the measurement you provided; blanks mean the number ' +
+      'wasn\'t known and should be entered from the roof. Prices are editable typical values, not a quote. ' +
+      'Only add items that are genuinely required by code or actually performed on this roof.</div>';
+
+  // wire per-card editing
+  $("page").querySelectorAll(".item").forEach((el) => {
+    const k = el.dataset.k;
+    const ck = el.querySelector(".ck"), q = el.querySelector(".q"), p = el.querySelector(".p"), ext = el.querySelector(".ext");
+    const sync = () => {
+      overrides[k] = { on: ck.checked, qty: q.value === "" ? "" : parseFloat(q.value),
+                       price: p.value === "" ? "" : parseFloat(p.value) };
+      el.classList.toggle("on", ck.checked);
+      ext.textContent = (q.value !== "" && p.value !== "")
+        ? money(sup.round2(parseFloat(q.value) * parseFloat(p.value))) : "—";
+    };
+    ck.addEventListener("change", sync);
+    q.addEventListener("input", sync);
+    p.addEventListener("input", sync);
+  });
+}
+
+// ---- worksheet PDF ----
+function selectedItems() {
+  if (!lastResult) return [];
+  return lastResult.items.filter((it) => {
+    const ov = overrides[it.key] || {};
+    return ov.on !== undefined ? ov.on : (it.tier === "code");
+  }).map((it) => {
+    const ov = overrides[it.key] || {};
+    const qty = ov.qty !== undefined && ov.qty !== "" ? ov.qty : it.qty;
+    const price = ov.price !== undefined && ov.price !== "" ? ov.price : it.price;
+    return { ...it, qtyF: qty, priceF: price,
+             extF: (qty != null && qty !== "" && price != null && price !== "") ? sup.round2(qty * price) : null };
+  });
+}
+
+function downloadPdf() {
+  if (!lastResult) { alert("Press Show items first."); return; }
+  const items = selectedItems();
+  if (!items.length) { alert("No items selected."); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit: "pt", format: "letter"});
+  const W = 612, MX = 42, grey = [129, 136, 142];
+  let y = 46;
+  const need = (h) => { if (y + h > 742) { doc.addPage(); y = 46; } };
+
+  const img = $("logoimg");
+  try { doc.addImage(img, "PNG", MX, y, 56, 56 * (img.naturalHeight / img.naturalWidth)); } catch (e) {}
+  const hx = MX + 70;
+  doc.setFont("helvetica", "bold").setFontSize(11).text(COMPANY.name, hx, y + 10);
+  doc.setFont("helvetica", "normal").setFontSize(9);
+  let cy = y + 22; COMPANY.address.forEach((l) => { doc.text(l, hx, cy); cy += 11; });
+  doc.text("Phone: " + COMPANY.phone, hx, cy);
+  doc.setFont("helvetica", "bold").setFontSize(16).text("SUPPLEMENT WORKSHEET", W - MX, y + 14, {align: "right"});
+  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...grey);
+  doc.text(lastResult.jurisdiction.name, W - MX, y + 30, {align: "right"});
+  doc.setTextColor(0, 0, 0); y += 74;
+
+  // context strip
+  const carrier = $("carrier").value;
+  const ctx = [];
+  if (carrier && carrier !== "Other / Unknown") ctx.push("Carrier: " + carrier);
+  if (drInfo && drInfo.claim_no) ctx.push("Claim #: " + drInfo.claim_no);
+  if (drInfo && drInfo.date_of_loss) ctx.push("Date of loss: " + drInfo.date_of_loss);
+  if (ctx.length) { doc.setFontSize(9.5); doc.text(ctx.join("     "), MX, y); y += 16; }
+  doc.setFontSize(8).setTextColor(...grey);
+  doc.text(lastResult.jurisdiction.edition + " — confirm code sections with the AHJ.", MX, y);
+  doc.setTextColor(0, 0, 0); y += 16;
+
+  // table header
+  const cQty = MX + 300, cUnit = MX + 348, cPr = MX + 430, cExt = W - MX;
+  need(16);
+  doc.setFontSize(7).setTextColor(...grey);
+  doc.text("ITEM / CODE", MX, y); doc.text("QTY", cQty, y, {align: "right"});
+  doc.text("UNIT", cUnit, y, {align: "center"}); doc.text("UNIT $", cPr, y, {align: "right"});
+  doc.text("EXT.", cExt, y, {align: "right"});
+  doc.setDrawColor(0, 0, 0).line(MX, y + 4, W - MX, y + 4); doc.setTextColor(0, 0, 0); y += 15;
+
+  let total = 0;
+  for (const it of items) {
+    const nm = doc.splitTextToSize(it.name, 250);
+    const rowH = nm.length * 11 + 22;
+    need(rowH + 6);
+    doc.setFontSize(9).setFont("helvetica", "bold").text(nm, MX, y);
+    doc.setFont("helvetica", "normal").setFontSize(8).setTextColor(...grey);
+    doc.text((it.tierLabel + (it.code && it.code !== "—" ? "  ·  " + it.code : "")), MX, y + nm.length * 11 + 1);
+    doc.setTextColor(0, 0, 0).setFontSize(9);
+    doc.text(it.qtyF != null && it.qtyF !== "" ? String(it.qtyF) : "___", cQty, y, {align: "right"});
+    doc.text(it.unit || "", cUnit, y, {align: "center"});
+    doc.text(it.priceF != null && it.priceF !== "" ? money(it.priceF) : "—", cPr, y, {align: "right"});
+    doc.text(it.extF != null ? money(it.extF) : "—", cExt, y, {align: "right"});
+    if (it.extF != null) total += it.extF;
+    // justification (wrapped)
+    doc.setFontSize(7.5).setTextColor(...grey);
+    const why = doc.splitTextToSize("Justification: " + it.why, W - MX * 2);
+    doc.text(why, MX, y + nm.length * 11 + 12);
+    y += nm.length * 11 + 12 + why.length * 9 + 8;
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(239, 240, 242).line(MX, y - 5, W - MX, y - 5);
+  }
+
+  need(30);
+  doc.setFillColor(239, 240, 242).rect(cQty - 10, y, cExt - cQty + 10, 22, "F");
+  doc.setFont("helvetica", "bold").setFontSize(11);
+  doc.text("SUPPLEMENT TOTAL", cQty - 2, y + 15);
+  doc.text(money(sup.round2(total)), cExt, y + 15, {align: "right"});
+  doc.setFont("helvetica", "normal"); y += 34;
+
+  doc.setFontSize(7.5).setTextColor(...grey);
+  const foot = doc.splitTextToSize("Prepared for legitimate, code-required or performed scope only. Quantities and prices are editable field values, not a final quote. Verify all code sections with the Authority Having Jurisdiction.", W - MX * 2);
+  doc.text(foot, MX, y);
+
+  const claim = drInfo && drInfo.claim_no ? " " + drInfo.claim_no : "";
+  doc.save(("Supplement Worksheet" + claim).replace(/[\\/:*?"<>|]/g, "") + ".pdf");
+}
+
+// ---- wiring ----
+$("drfile").addEventListener("change", (e) => e.target.files[0] && handleDR(e.target.files[0]));
+$("mfile").addEventListener("change", (e) => e.target.files[0] && handleMeasurement(e.target.files[0]));
+[["drdrop","drfile",handleDR],["mdrop","mfile",handleMeasurement]].forEach(([d,f,fn]) => {
+  const drop = $(d);
+  ["dragover","dragenter"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("armed"); }));
+  ["dragleave","drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("armed"); }));
+  drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && fn(e.dataTransfer.files[0]));
+});
+$("build").addEventListener("click", () => { overrides = {}; build(); });
+$("download").addEventListener("click", downloadPdf);
+["city","carrier"].forEach((id) => $(id).addEventListener("change", () => { if (lastResult) build(); }));
+["q_eaves","q_rakes","q_valleys","q_squares","q_step","q_pen"].forEach((id) =>
+  $(id).addEventListener("input", () => { if (lastResult) build(); }));
+</script>
+</body></html>

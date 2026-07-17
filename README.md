@@ -1,31 +1,27 @@
-# Vista Production Tracker
+# Vista Field Tool
 
-Single-file job money tracker for Vista Exterior Construction. Everything lives
-in `index.html` — no build step, no dependencies; it also works by just
-double-clicking the file in a browser.
+Full copy of the Measure2Estimate field tool, rebranded for Vista Exterior
+Construction. Static site in `web/` — no build step; Netlify publishes `web`
+(see `netlify.toml`) on every push to the default branch.
 
-- **Password gate** — default `Vista.123`, changeable in the app via
-  "Change password…". The password is stored per-browser (a new device starts
-  back at the default). Clearing the site's browser data resets the password
-  **and erases the sheet**, so keep CSV backups. It's a lightweight client-side
-  gate, not bank-grade security.
-- **Active / PIF sub-tabs** — checking PIF moves a job to the PIF tab while its
-  numbers stay in every total and equation. Amber rows = installed but not
-  paid in full (the collections list).
-- **Editable grid** — customers, reps, claim/PO numbers, dates, ACV,
-  depreciation, materials, labor, notes, installed/PIF checkboxes; sortable
-  columns, live search filter, and an "approve $ change" confirmation before
-  any money cell hard-changes.
-- **Income overlook** — money in the book, accounts receivable, overhead
-  runway, two pipeline projections, and an editable goals ladder (names,
-  amounts, avg profit per job, deadline) with jobs-needed and contracts-per-week.
-- **Payables** — Materials (total prefills from the Mats column, owed = total −
-  paid), plus Subs and Rep-pay lists with owed/paid/balance per person.
-- **Autosave** — everything saves to this browser's localStorage automatically.
-  Use Export CSV for backups or to move devices; Import CSV restores them.
+Tabs: Estimate Creator (m2e), Material Order Generator (m2mo), Depreciation
+Request (m2dr), Production (AR & income tracker).
 
-## Deploy
+Differences from the source site:
 
-Netlify publishes the repo root (`netlify.toml` → `publish = "."`). Connect
-this repo as a new Netlify project and every push to the default branch
-deploys automatically.
+- **Logo swapped** everywhere (`web/logo.png`, white background) and company
+  branding set to Vista Exterior Construction. `COMPANY.address`/`phone` and
+  the rep contact block are blank — fill them in (`const COMPANY` / `const REP`
+  near the top of each page's script) so estimates and PDFs print your info.
+- **All data removed** — the Production sheet and customer picker start empty
+  (`web/production.json` and `web/customers.json` are `[]`), and the tracker's
+  bank / overhead / pipeline defaults are 0 with generic goal rows.
+- **Password gate** (`web/gate.js`, included by every page): default password
+  `Vista.123`, changeable via the link on the lock screen. The custom password
+  is stored per-browser; unlocking lasts for the tab session. Clearing the
+  site's browser data resets the password to the default and erases saved
+  sheets — export CSV backups first. It's a lightweight client-side gate, not
+  real security.
+
+Everything else — layouts, math, PDF generation, CSV import/export,
+localStorage autosave — is identical to the source site.

@@ -1,0 +1,978 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista Field Estimator — Measure2Estimate</title>
+<link rel="icon" href="logo.png">
+<script src="pdf.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="roofparse.js"></script>
+<style>
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
+  /* ---- site tabs ---- */
+  .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
+  .tabs a{padding:9px 18px;background:#f7f8f9;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+    font-weight:700;font-size:13px;color:var(--grey);text-decoration:none}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:#fff;color:var(--ink);border-top:3px solid var(--red);padding-top:7px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+  .tabs a span{font-weight:400;color:var(--grey);font-size:11px;margin-left:6px}
+  .wrap{display:flex;gap:18px;max-width:1340px;margin:0 auto 18px;padding:0 14px;align-items:flex-start}
+  @media (max-width:980px){.wrap{flex-direction:column}.panel{width:100%!important}}
+  /* ---- control panel ---- */
+  .panel{width:400px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
+  .panel h2{font-size:14px;margin:26px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
+  .panel h2:first-of-type{margin-top:22px}
+  .brand{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .brand img{width:52px;height:auto}
+  .apptitle b{font-size:16px;letter-spacing:.01em}
+  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
+  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed .dropbig{color:var(--red)}
+  .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
+  .drop input{display:none}
+  .privacy{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+  .samplerow{margin-top:8px;font-size:12px}
+  .samplerow a{color:var(--red);font-weight:700;text-decoration:none}
+  .samplerow a:hover{text-decoration:underline}
+  .mini{font-size:11px;color:var(--grey);margin-top:6px}
+  .status{margin-top:8px;font-size:12px}
+  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .grid label,.stack label{display:block;font-size:11px;color:var(--grey);margin-top:6px}
+  input[type=text],input[type=number],input[type=date]{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font:inherit}
+  input[type=number]{text-align:right}
+  .waste{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .waste button{padding:5px 9px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;font:inherit}
+  .waste button:hover{border-color:var(--salmon)}
+  .waste button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .waste button .sug{color:var(--red);font-weight:700}
+  .waste button.sel .sug{color:var(--salmon)}
+  .chk{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px}
+  /* profit margin slider */
+  .marginrow{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .marginrow input[type=range]{flex:1;accent-color:var(--red)}
+  .marginval{min-width:110px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px}
+  .marginval b{font-size:14px}
+  /* upgrade cards */
+  .upg{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:8px}
+  .upg.on{border-color:var(--salmon);background:#fff8f7}
+  .upg .head2{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12.5px}
+  .upg .price{margin-left:auto;color:var(--red);white-space:nowrap}
+  .upg .sell{font-size:11px;color:var(--grey);margin:4px 0 0 24px;line-height:1.45}
+  .upg .calc{font-size:11px;color:var(--ink);margin:4px 0 0 24px;font-variant-numeric:tabular-nums}
+  .upg .upcharge{display:flex;align-items:center;gap:6px;margin:6px 0 0 24px;font-size:11px;color:var(--grey)}
+  .upg .upcharge input{width:80px;padding:3px 6px;border:1px solid var(--line);border-radius:4px;font:inherit;text-align:right}
+  .meas{background:#fbfbfc;border:1px solid var(--line);padding:8px 10px;font-size:12px;line-height:1.6;margin-top:8px}
+  .meas b{font-variant-numeric:tabular-nums}
+  .warn{color:#8a6d00;font-size:11px;margin-top:4px}
+  .actions{margin-top:20px;display:flex;gap:8px}
+  .actions button{flex:1;padding:10px;border:0;border-radius:5px;font:700 13px Arial;cursor:pointer}
+  .go{background:var(--red);color:#fff}
+  .alt{background:var(--bar);color:var(--ink)}
+  /* ---- estimate preview (mirrors roofparse/render.py) ---- */
+  .page{flex:1;min-width:0;background:#fff;padding:34px 40px 48px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+  .co{display:flex;gap:14px}
+  .co img{width:96px;height:auto;align-self:flex-start}
+  .co .info b{font-size:13px}
+  .co .info{font-size:12px;line-height:1.45}
+  .co .rep{margin-top:10px}
+  .wordmark2{margin-top:12px;font-family:Georgia,'Times New Roman',serif;color:var(--brick);letter-spacing:.14em;font-size:19px;font-weight:600}
+  .wordmark2 small{display:block;font-size:10px;letter-spacing:.34em;margin-top:1px}
+  .title{text-align:right;max-width:320px}
+  .title h1{margin:0;font-size:25px;font-weight:700;line-height:1.1}
+  .title .date{margin-top:6px;font-size:13px}
+  .cust{display:flex;justify-content:space-between;border:1px solid var(--line);background:#fbfbfc;padding:12px 16px;margin:26px 0 4px;font-size:12px;line-height:1.5}
+  .cust b{font-size:13px}
+  .secbar{background:var(--bar);font-weight:700;font-size:15px;padding:8px 14px;margin-top:18px}
+  ul.scope{margin:12px 0 10px;padding-left:16px;color:#2a2a2a;font-size:12px}
+  ul.scope li{margin:1px 0}
+  .xtra{font-size:12px;color:#2a2a2a;margin:10px 0}
+  .disc{color:var(--grey);font-size:11px;line-height:1.5;margin:12px 0 6px}
+  table.items{width:100%;border-collapse:collapse;margin-top:4px}
+  table.items td{padding:4px 4px;font-size:12.5px;vertical-align:top}
+  table.items .head td{color:var(--grey);padding-bottom:2px}
+  table.items .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.items .unit{text-align:center;color:#2a2a2a;width:56px}
+  table.items .grp td{padding-top:8px}
+  table.items .desc{padding-left:14px}
+  table.items .sub td{border-top:1px solid var(--ink);font-weight:700;padding-top:8px;font-size:14px}
+  table.items input{width:74px;padding:2px 4px;border:1px solid transparent;border-radius:3px;font:inherit;text-align:right;background:transparent}
+  table.items input:hover,table.items input:focus{border-color:var(--line);background:#fbfbfc;outline:none}
+  table.items .off td{opacity:.35;text-decoration:line-through}
+  table.items .off input{text-decoration:line-through}
+  table.items input.cdesc{width:96%;text-align:left}
+  table.items input.cunit{width:44px;text-align:center}
+  .addline{border:1px dashed var(--line);background:#fff;border-radius:4px;padding:4px 10px;
+    font:inherit;font-size:11.5px;color:var(--grey);cursor:pointer;margin-right:6px}
+  .addline:hover{border-color:var(--salmon);color:var(--red)}
+  .rowx{border:0;background:none;color:var(--grey);cursor:pointer;font-size:13px;padding:0 4px}
+  .total{display:flex;justify-content:space-between;align-items:center;background:var(--bar);padding:12px 16px;margin-top:22px;font-size:17px;font-weight:700}
+  .totwrap input{width:150px;font:700 17px Arial;text-align:right;border:1px solid transparent;
+    border-radius:4px;background:transparent;padding:2px 6px;font-variant-numeric:tabular-nums}
+  .totwrap input:hover,.totwrap input:focus{border-color:var(--salmon);background:#fff;outline:none}
+  .totnote{text-align:right;font-size:11px;color:var(--grey);margin-top:6px}
+  .totnote a{color:var(--red);font-weight:700;text-decoration:none}
+  /* optional-upgrades block (customer checks on the paper copy) */
+  .optbox{display:inline-block;width:13px;height:13px;border:1.6px solid var(--ink);border-radius:2px}
+  table.opts{margin-top:6px}
+  table.opts td{padding:7px 4px;border-bottom:1px solid var(--bar)}
+  .optck{width:26px;text-align:center}
+  .optdesc{font-weight:700}
+  .optsell{font-weight:400;font-size:11px;color:var(--grey);margin-top:2px}
+  .optprice{font-weight:700;min-width:80px}
+  .optfoot{display:flex;justify-content:space-between;gap:20px;margin-top:12px;font-size:12px;font-weight:700}
+  .fin{text-align:right;margin-top:10px;color:#2a2a2a}
+  .fin b{color:var(--red)}
+  .sigs{margin-top:40px}
+  .sig{display:flex;gap:30px;margin-bottom:30px}
+  .sig .l{flex:2;border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:#2a2a2a}
+  .sig .d{flex:1;border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:#2a2a2a}
+  .empty{color:var(--grey);text-align:center;padding:60px 0}
+</style></head><body><script src="gate.js"></script>
+<div class="tabs">
+  <a class="on" href="index.html">Estimate Creator <span>m2e</span></a>
+  <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
+  <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
+  <a href="customers.html">Production <span>AR</span></a>
+</div>
+<div class="wrap">
+
+  <!-- ======================= controls ======================= -->
+  <div class="panel">
+    <div class="brand">
+      <img src="logo.png" alt="Vista Exterior Construction" id="logoimg">
+      <div class="apptitle"><b>Field Estimator</b>
+        <span>Measurement → priced estimate → PDF</span></div>
+    </div>
+
+    <h2>1 · Measurement</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="application/pdf">
+      <div class="dropbig">Drop a GAF QuickMeasure or insurance scope PDF</div>
+      <div class="dropsub">or tap to choose a file</div>
+    </label>
+    <div class="privacy">Parsed entirely in your browser — the PDF never leaves this device.</div>
+    <div class="samplerow"><a href="#" id="loadsample">Or try it with sample data →</a></div>
+    <div class="status" id="status"></div>
+    <div class="meas" id="meas" hidden></div>
+
+    <h2>2 · Waste &amp; scope</h2>
+    <label>Waste % (★ = GAF suggested)</label>
+    <div class="waste" id="waste"></div>
+    <div class="grid">
+      <label>Static vents (EA)<input type="number" id="s_static_vents" value="6" min="0" step="1"></label>
+      <label>Exhaust vents (EA)<input type="number" id="s_exhaust_vents" value="1" min="0" step="1"></label>
+      <label>Step flashing (BD)<input type="number" id="s_step_flashing_bd" value="1" min="0" step="1"></label>
+      <label>Sealant (EA)<input type="number" id="s_sealant" value="2" min="0" step="1"></label>
+      <label>Ice &amp; water (SQ)<input type="number" id="s_ice_water_sq" value="0" min="0" step="0.5"></label>
+      <label>Extra pipe flashing<input type="number" id="s_extra_pipe_flashing" value="0" min="0" step="1"></label>
+    </div>
+    <div class="chk"><input type="checkbox" id="s_include_gutters" checked><label for="s_include_gutters" style="margin:0">Include gutters section</label></div>
+    <div class="grid">
+      <label>Gutters (LF)<input type="number" id="s_gutter_lf" value="0" min="0" step="1"></label>
+      <label>Downspouts (LF)<input type="number" id="s_downspout_lf" value="0" min="0" step="1"></label>
+    </div>
+
+    <h2>3 · Profit margin</h2>
+    <div class="marginrow">
+      <input type="range" id="margin" min="0" max="100" step="1" value="45">
+      <div class="marginval" id="marginval"><b>45%</b> · price ×1.82</div>
+    </div>
+    <div class="mini" id="persq"></div>
+
+    <h2>4 · Customer</h2>
+    <label style="display:block;font-size:11px;color:var(--grey)">Pick from production list
+      <select id="custpick" style="width:100%;padding:6px 7px;border:1px solid var(--line);border-radius:4px;font:inherit;margin-top:2px">
+        <option value="">— choose a customer (or type below) —</option>
+      </select></label>
+    <div class="grid">
+      <label>First name<input type="text" id="c_first" autocomplete="off"></label>
+      <label>Last name<input type="text" id="c_last" autocomplete="off"></label>
+    </div>
+    <div class="stack">
+      <label>Street address<input type="text" id="c_addr1"></label>
+      <label>City, State ZIP<input type="text" id="c_addr2"></label>
+      <div class="grid">
+        <label>Phone<input type="text" id="c_phone"></label>
+        <label>PO #<input type="text" id="c_po"></label>
+      </div>
+      <label>Estimate title<input type="text" id="c_title" placeholder="auto"></label>
+      <label>Date<input type="text" id="c_date"></label>
+    </div>
+
+    <h2>5 · Upgrades <span style="font-weight:400;color:var(--grey);font-size:11px">— print as customer options, not in the total</span></h2>
+
+    <div class="upg" id="upg_class4_card">
+      <div class="head2"><input type="checkbox" id="u_class4">
+        <label for="u_class4" style="margin:0">Class 4 Owens Corning Shingles</label>
+        <span class="price" id="class4price"></span></div>
+      <div class="sell">Impact-resistant Class 4 shingles — many insurance carriers
+        discount premiums <b>10–20%</b> for hail-rated roofs.</div>
+      <div class="upcharge">Upcharge $/SQ
+        <input type="number" id="u_class4_sq" min="0" step="1" value="100"></div>
+      <div class="calc" id="class4calc"></div>
+    </div>
+
+    <div class="upg" id="upg_gutters_card">
+      <div class="head2"><input type="checkbox" id="u_gutters">
+        <label for="u_gutters" style="margin:0">Seamless Gutters</label>
+        <span class="price">$12.00 / LF</span></div>
+      <div class="sell">New 5&quot; aluminum seamless gutters protect fascia, siding and
+        foundation — sized to the full roof perimeter, color matched to the home.</div>
+      <div class="calc" id="gutterscalc"></div>
+    </div>
+
+    <div class="upg" id="upg_guards_card">
+      <div class="head2"><input type="checkbox" id="u_guards">
+        <label for="u_guards" style="margin:0">Gutter Guards</label>
+        <span class="price">$10.00 / LF</span></div>
+      <div class="sell">Keeps leaves and debris out — gutters keep flowing in heavy
+        rain and there are no more ladder cleanings.</div>
+      <div class="calc" id="guardscalc"></div>
+    </div>
+
+    <div class="upg" id="upg_downspouts_card">
+      <div class="head2"><input type="checkbox" id="u_downspouts">
+        <label for="u_downspouts" style="margin:0">Downspouts (12&#39; drops)</label>
+        <span class="price">$12.00 / LF</span></div>
+      <div class="sell">Oversized 3&quot;x4&quot; downspouts move water fast and away from
+        the foundation — standard 12&#39; drops.</div>
+      <div class="upcharge">Downspouts (EA)
+        <input type="number" id="u_downspouts_ct" min="0" step="1" placeholder="0"></div>
+      <div class="calc" id="downspoutscalc"></div>
+    </div>
+
+    <div class="actions">
+      <button class="go" id="download">Download PDF</button>
+      <button class="alt" id="print">Print</button>
+    </div>
+    <div class="mini" id="fname"></div>
+  </div>
+
+  <!-- ======================= live preview ======================= -->
+  <div class="page" id="page"><div class="empty">Upload a measurement PDF (or load the sample) to build the estimate.</div></div>
+</div>
+
+<script>
+"use strict";
+const rp = window.roofparse;
+const $ = (id) => document.getElementById(id);
+const COMPANY = {
+  name: "Vista Exterior Construction",
+  address: [],
+  phone: "",
+};
+const REP = { name: "", phone: "", email: "" };
+
+let measurement = null;          // parsed RoofMeasurement
+let wastePct = null;             // selected waste %, null = engine default
+let overrides = {};              // item key -> {qty, unit_price, off} (unit_price stored pre-margin)
+let estimate = null;             // last built estimate
+let marginPct = 45;              // profit margin slider 0-100 (effective capped at 95)
+let totalTarget = null;          // rep-typed target TOTAL; lines scale proportionally to hit it
+
+// margin m -> price multiplier k so that (k-1)/k of the price is profit
+function marginK() {
+  const m = Math.min(marginPct, 95);
+  return 1 / (1 - m / 100);
+}
+
+function roofPerimeter(m) {
+  const L = (m && m.lengths_ft) || {};
+  const p = (L.eaves || 0) + (L.rakes || 0);
+  return rp.pyRound(p || L.drip_edge || 0, 2);
+}
+
+function squaresOrder(m, scope) {
+  const area = (m.totals && m.totals.roof_area_sqft) || 0;
+  let waste = scope.waste_pct;
+  if (waste == null) waste = m.suggested_waste_pct != null ? m.suggested_waste_pct : 15;
+  return rp.pyRound((area / 100) * (1 + waste / 100), 2);
+}
+
+// --------------------------------------------------------------- utils
+const money = (x) => "$" + x.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const qtyf = (x) => x.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function today() {
+  const d = new Date();
+  return String(d.getMonth()+1).padStart(2,"0") + "/" + String(d.getDate()).padStart(2,"0") + "/" + d.getFullYear();
+}
+$("c_date").value = today();
+
+// --------------------------------------------------------------- PDF intake
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+}
+
+async function extractPdf(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const pageLines = [];
+  let suggested = null;
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const toks = tc.items
+      .filter((it) => it.str && it.str.trim())
+      .map((it) => ({str: it.str.trim(), x: it.transform[4], y: it.transform[5], w: it.width || 0}));
+
+    // group into lines by y (pdf y grows upward)
+    const lines = [];
+    for (const t of toks) {
+      let ln = lines.find((l) => Math.abs(l.y - t.y) < 2.5);
+      if (!ln) { ln = {y: t.y, toks: []}; lines.push(ln); }
+      ln.toks.push(t);
+    }
+    lines.sort((a, b) => b.y - a.y);
+    for (const ln of lines) {
+      ln.toks.sort((a, b) => a.x - b.x);
+      pageLines.push(ln.toks.map((t) => t.str).join(" "));
+    }
+
+    // positional "Suggested" waste detection (port of gaf._detect_suggested_waste)
+    if (suggested === null) {
+      const sugg = toks.find((t) => t.str === "Suggested");
+      const wasteHdr = toks.find((t) => t.str === "Waste");
+      if (sugg && wasteHdr) {
+        const pcts = toks.filter((t) => Math.abs(t.y - wasteHdr.y) < 3 && /^\d+%$/.test(t.str));
+        if (pcts.length) {
+          const sx = sugg.x + sugg.w / 2;
+          const nearest = pcts.reduce((a, b) =>
+            Math.abs((a.x + a.w/2) - sx) <= Math.abs((b.x + b.w/2) - sx) ? a : b);
+          suggested = parseFloat(nearest.str.replace("%", ""));
+        }
+      }
+    }
+  }
+  return {text: pageLines.join("\n"), suggested};
+}
+
+async function handleFile(file) {
+  const st = $("status");
+  st.className = "status"; st.textContent = "Parsing " + file.name + " …";
+  try {
+    const {text, suggested} = await extractPdf(file);
+    // Try the GAF QuickMeasure parser first; if it finds no roof area and
+    // the text reads like a carrier estimate, fall back to the insurance
+    // scope parser (Xactimate DR layout).
+    let rm = rp.parseText(text);
+    let kind = "GAF QuickMeasure";
+    if (!rm.totals.roof_area_sqft && rp.looksLikeScope(text)) {
+      rm = rp.parseScopeText(text);
+      kind = "insurance scope";
+    }
+    if (suggested !== null && kind === "GAF QuickMeasure") {
+      rm.suggested_waste_pct = suggested;
+      for (const row of rm.waste_table)
+        if (Math.abs(row.waste_pct - suggested) < 0.01) row.suggested = true;
+    }
+    loadMeasurement(rm, file.name + " (" + kind + ")");
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = "Could not parse: " + e.message;
+  }
+}
+
+function loadMeasurement(rm, label) {
+  measurement = rm;
+  wastePct = null;
+  overrides = {};
+  totalTarget = null;
+  const st = $("status");
+  const conf = Math.round((rm.source.confidence || 0) * 100);
+  st.className = "status " + (conf >= 80 ? "ok" : "err");
+  st.textContent = `Parsed ${label} — ${conf}% of core fields captured` +
+                   (rm.warnings.length ? ` · ${rm.warnings.length} warning(s)` : "");
+  const t = rm.totals, L = rm.lengths_ft, pen = rm.penetrations;
+  $("meas").hidden = false;
+  $("meas").innerHTML =
+    `Roof area <b>${(t.roof_area_sqft||0).toLocaleString()}</b> sq ft · ` +
+    `<b>${t.squares ?? "?"}</b> SQ · ${t.facets ?? "?"} facets · pitch <b>${t.predominant_pitch ?? "?"}</b><br>` +
+    (L.eaves == null && L.rakes == null && L.drip_edge != null
+      ? `Edge (perimeter) <b>${L.drip_edge}</b> · Valleys <b>${L.valleys ?? "—"}</b> · `
+      : `Eaves <b>${L.eaves ?? "—"}</b> · Rakes <b>${L.rakes ?? "—"}</b> · Valleys <b>${L.valleys ?? "—"}</b> · `) +
+    `Ridge cap <b>${L.ridge_cap ?? "—"}</b> ft · Penetrations <b>${pen.count ?? "—"}</b>` +
+    (rm.warnings.length ? `<div class="warn">⚠ ${rm.warnings.join("; ")}</div>` : "");
+  renderWaste();
+  rebuild();
+}
+
+// --------------------------------------------------------------- waste picker
+function renderWaste() {
+  const box = $("waste");
+  box.innerHTML = "";
+  const rows = (measurement && measurement.waste_table.length)
+    ? measurement.waste_table
+    : [0, 10, 15, 18, 20, 22, 25].map((w) => ({waste_pct: w, suggested: false}));
+  const eff = wastePct != null ? wastePct
+            : (measurement && measurement.suggested_waste_pct != null ? measurement.suggested_waste_pct : 15);
+  for (const row of rows) {
+    const b = document.createElement("button");
+    b.innerHTML = row.waste_pct + "%" + (row.suggested ? ' <span class="sug">★</span>' : "");
+    if (Math.abs(row.waste_pct - eff) < 0.01) b.classList.add("sel");
+    b.onclick = () => { wastePct = row.waste_pct; totalTarget = null; renderWaste(); rebuild(); };
+    box.appendChild(b);
+  }
+}
+renderWaste();
+
+// --------------------------------------------------------------- estimate build
+function scopeFromForm() {
+  return {
+    waste_pct: wastePct,
+    static_vents: +$("s_static_vents").value || 0,
+    exhaust_vents: +$("s_exhaust_vents").value || 0,
+    step_flashing_bd: +$("s_step_flashing_bd").value || 0,
+    sealant: +$("s_sealant").value || 0,
+    ice_water_sq: +$("s_ice_water_sq").value || 0,
+    extra_pipe_flashing: +$("s_extra_pipe_flashing").value || 0,
+    include_gutters: $("s_include_gutters").checked,
+    gutter_lf: +$("s_gutter_lf").value || 0,
+    downspout_lf: +$("s_downspout_lf").value || 0,
+  };
+}
+
+function customerMeta() {
+  const first = $("c_first").value.trim(), last = $("c_last").value.trim();
+  const name = (first || last) ? (first + " " + last).trim() : "";
+  const addr = [$("c_addr1").value.trim(), $("c_addr2").value.trim()].filter(Boolean);
+  const autoTitle = (last ? last + " - " : "") + "Estimate" + ($("s_include_gutters").checked ? " w Gutters" : "");
+  return {
+    title: $("c_title").value.trim() || autoTitle,
+    date: $("c_date").value.trim() || today(),
+    company: COMPANY, rep: REP,
+    customer: {name, address: addr, phone: $("c_phone").value.trim(), email: ""},
+  };
+}
+
+// Offered upgrades print on the estimate as an "Optional Upgrades" section with
+// physical checkboxes for the customer — they are NOT included in the TOTAL.
+function buildUpgradeOptions(m, scope) {
+  const per = roofPerimeter(m);
+  const sq = squaresOrder(m, scope);
+  const k = marginK();
+  const opts = [];
+  const add = (key, description, sell, qty, unit, unit_price, no_margin) => {
+    const eff = rp.pyRound(unit_price * (no_margin ? 1 : k), 4);
+    opts.push({ key, description, sell, qty, unit, unit_price: eff,
+                total: rp.pyRound(qty * eff, 2) });
+  };
+  if ($("u_class4").checked && sq > 0)
+    add("upg_class4", "Owens Corning Duration FLEX Class 4 Impact-Resistant Shingles",
+        "Hail-rated Class 4 — many insurance carriers discount premiums 10–20%.",
+        sq, "SQ", +$("u_class4_sq").value || 0, true);
+  if ($("u_gutters").checked && per > 0)
+    add("upg_gutters", "5\" Aluminum Seamless Gutters (full roof perimeter)",
+        "Protects fascia, siding and foundation; color selected by homeowner.",
+        per, "LF", 12.00, false);
+  if ($("u_guards").checked && per > 0)
+    add("upg_guards", "Gutter Guards (full roof perimeter)",
+        "Keeps leaves and debris out — no more ladder cleanings.",
+        per, "LF", 10.00, false);
+  const ct = +$("u_downspouts_ct").value || 0;
+  if ($("u_downspouts").checked && ct > 0)
+    add("upg_downspouts", `3"x4" Downspouts — ${ct} × 12' drops`,
+        "Oversized downspouts move water fast and away from the foundation.",
+        ct * 12, "LF", 12.00, false);
+  return opts;
+}
+
+function applyOverrides(est) {
+  const k = marginK();
+  for (const sec of est.sections) {
+    sec.items = sec.items.filter((it) => !(overrides[it.key] || {}).off);
+    for (const it of sec.items) {
+      const o = overrides[it.key] || {};
+      if (o.qty != null) it.qty = o.qty;
+      if (o.unit_price != null) it.unit_price = o.unit_price;
+      const kk = it.no_margin ? 1 : k;
+      it.eff_price = rp.pyRound(it.unit_price * kk, 4);
+      it.total = rp.pyRound(it.qty * it.eff_price, 2);
+    }
+  }
+  // rep-typed target total: scale every line proportionally, then absorb the
+  // rounding residual into the largest line so the total matches to the cent
+  est.total_adjusted = false;
+  if (totalTarget != null) {
+    const t0 = est.total();
+    if (t0 > 0 && Math.abs(totalTarget - t0) > 0.005) {
+      const scale = totalTarget / t0;
+      let biggest = null;
+      for (const sec of est.sections)
+        for (const it of sec.items) {
+          it.eff_price = rp.pyRound(it.eff_price * scale, 4);
+          it.total = rp.pyRound(it.qty * it.eff_price, 2);
+          if (!biggest || it.total > biggest.total) biggest = it;
+        }
+      const resid = rp.pyRound(totalTarget - est.total(), 2);
+      if (biggest && Math.abs(resid) <= 50) {
+        biggest.total = rp.pyRound(biggest.total + resid, 2);
+        biggest.eff_price = rp.pyRound(biggest.total / biggest.qty, 4);
+      }
+      est.total_adjusted = true;
+    }
+  }
+  est.sections = est.sections.filter((s) => s.items.length);
+  // refresh financing off the adjusted total
+  const P = est.total();
+  est.financing_monthly = P > 0 ? rp.pyRound(P * (0.0999/12) / (1 - Math.pow(1 + 0.0999/12, -120)), 0) : null;
+  return est;
+}
+
+let customItems = [];   // user-added Materials/Labor lines
+let customSeq = 0;
+
+function injectCustomItems(est) {
+  const roofing = est.sections.find((s) => s.name.startsWith("Roofing"));
+  if (!roofing) return;
+  for (const ci of customItems) {
+    const it = Object.assign({}, ci);
+    let idx = -1;
+    for (let i = 0; i < roofing.items.length; i++)
+      if (roofing.items[i].group === it.group) idx = i;
+    if (idx >= 0) roofing.items.splice(idx + 1, 0, it);
+    else roofing.items.push(it);
+  }
+}
+
+function rebuild() {
+  updateMarginAndUpgradeUi();
+  if (!measurement) return;
+  const est = rp.buildEstimate(measurement, customerMeta(), scopeFromForm());
+  injectCustomItems(est);
+  estimate = applyOverrides(est);
+  estimate.upgrade_options = buildUpgradeOptions(measurement, Object.assign({}, rp.DEFAULT_SCOPE, scopeFromForm()));
+  renderPreview(estimate);
+  const sqBase = (measurement.totals && measurement.totals.squares) || 0;
+  $("persq").textContent = sqBase > 0
+    ? `Price per square: ${money(rp.pyRound(estimate.total() / sqBase, 2))} (total ÷ ${qtyf(sqBase)} SQ)` : "";
+  const f = pdfFilename();
+  $("fname").textContent = f ? "PDF will save as: " + f : "";
+}
+
+function updateMarginAndUpgradeUi() {
+  const k = marginK();
+  $("marginval").innerHTML = `<b>${marginPct}%</b> · price ×${k.toFixed(2)}` +
+    (marginPct > 95 ? " (capped at 95%)" : "");
+  for (const id of ["class4", "gutters", "guards", "downspouts"])
+    $("upg_" + id + "_card").classList.toggle("on", $("u_" + id).checked);
+  if (!measurement) return;
+  const per = roofPerimeter(measurement);
+  const sq = squaresOrder(measurement, Object.assign({}, rp.DEFAULT_SCOPE, scopeFromForm()));
+  const up = +$("u_class4_sq").value || 0;
+  const ct = +$("u_downspouts_ct").value || 0;
+  $("class4price").textContent = up ? money(up) + " / SQ" : "";
+  $("class4calc").textContent = `${qtyf(sq)} SQ × ${money(up)} = ${money(rp.pyRound(sq * up, 2))} (not affected by margin)`;
+  $("gutterscalc").textContent = `${qtyf(per)} LF perimeter × ${money(rp.pyRound(12 * k, 2))} = ${money(rp.pyRound(per * rp.pyRound(12 * k, 4), 2))}`;
+  $("guardscalc").textContent = `${qtyf(per)} LF perimeter × ${money(rp.pyRound(10 * k, 2))} = ${money(rp.pyRound(per * rp.pyRound(10 * k, 4), 2))}`;
+  $("downspoutscalc").textContent = `${ct} × 12' = ${qtyf(ct * 12)} LF × ${money(rp.pyRound(12 * k, 2))} = ${money(rp.pyRound(ct * 12 * rp.pyRound(12 * k, 4), 2))}`;
+}
+
+// --------------------------------------------------------------- preview
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+
+function renderPreview(est) {
+  const cust = est.customer;
+  let html = `
+  <div class="top">
+    <div class="co">
+      <img src="logo.png" alt="logo">
+      <div class="info">
+        <b>${esc(est.company.name)}</b><br>${est.company.address.map(esc).join("<br>")}<br>Phone: ${esc(est.company.phone)}
+        <div class="rep"><b>Company Representative</b><br>${esc(est.rep.name)}<br>Phone: ${esc(est.rep.phone)}<br>${esc(est.rep.email)}</div>
+      </div>
+    </div>
+    <div class="title"><h1>${esc(est.title)}</h1><div class="date">${esc(est.date)}</div></div>
+  </div>
+  <div class="cust">
+    <div><b>${esc(cust.name || "—")}</b><br>${(cust.address||[]).map(esc).join("<br>")}<br>${esc(cust.phone||"")}</div>
+    <div>Job: ${esc(cust.name || "")}</div>
+  </div>`;
+
+  est.sections.forEach((sec) => {
+    let rows = "", lastGroup = null;
+    for (const it of sec.items) {
+      if (it.group !== lastGroup) { rows += `<tr class="grp"><td colspan="5">${esc(it.group)}</td></tr>`; lastGroup = it.group; }
+      const isCustom = it.key.startsWith("custom_");
+      const descCell = isCustom
+        ? `<input class="cdesc" data-cd="${it.key}" type="text" placeholder="Describe item…" value="${esc(it.description).replace(/"/g, "&quot;")}">`
+        : esc(it.description);
+      const unitCell = isCustom
+        ? `<input class="cunit" data-cu="${it.key}" type="text" value="${esc(it.unit).replace(/"/g, "&quot;")}">`
+        : it.unit;
+      rows += `<tr>
+        <td class="desc">${descCell}</td>
+        <td class="num"><input data-k="${it.key}" data-f="qty" type="number" step="0.01" value="${it.qty}"></td>
+        <td class="unit">${unitCell}</td>
+        <td class="num"><input data-k="${it.key}" data-f="unit_price" data-nm="${it.no_margin ? 1 : 0}" type="number" step="0.0001" value="${it.eff_price}"></td>
+        <td class="num" style="min-width:78px">${money(it.total)}
+          <button class="rowx" title="Remove line" data-x="${it.key}">×</button></td>
+      </tr>`;
+    }
+    const extra = sec.name.startsWith("Roofing")
+      ? `<div class="xtra">- Our Crews are licensed and insured.<br>- Crews will maintain safety requirement at all times during the construction process</div>` : "";
+    const addRow = sec.name.startsWith("Roofing")
+      ? `<tr><td colspan="5" style="padding-top:8px">
+           <button class="addline" data-g="Materials">+ Add Materials line</button>
+           <button class="addline" data-g="Labor">+ Add Labor line</button></td></tr>` : "";
+    html += `
+    <div class="secbar">${esc(sec.name)}</div>
+    <ul class="scope">${sec.bullets.map((b) => "<li>" + esc(b) + "</li>").join("")}</ul>${extra}
+    ${sec.disclaimer ? `<p class="disc">${esc(sec.disclaimer)}</p>` : ""}
+    <table class="items">
+      <tr class="head"><td></td><td class="num">Qty</td><td class="unit">Unit</td><td class="num">Unit $</td><td class="num">Price</td></tr>
+      ${rows}
+      ${addRow}
+      <tr class="sub"><td colspan="4"></td><td class="num">${money(rp.sectionSubtotal(sec))}</td></tr>
+    </table>`;
+  });
+
+  html += `
+  <div class="total"><span>TOTAL</span>
+    <span class="totwrap">$<input id="totaledit" type="number" step="0.01" min="0" value="${est.total().toFixed(2)}"></span></div>
+  ${est.total_adjusted ? `<div class="totnote">Adjusted to your target — all lines scaled proportionally. <a href="#" id="totalreset">Reset</a></div>` : ""}`;
+
+  if (est.upgrade_options && est.upgrade_options.length) {
+    const optRows = est.upgrade_options.map((o) => `
+      <tr class="optrow">
+        <td class="optck"><span class="optbox"></span></td>
+        <td class="optdesc">${esc(o.description)}
+          <div class="optsell">${esc(o.sell)}</div></td>
+        <td class="num">${qtyf(o.qty)} ${o.unit} × ${money(o.unit_price)}</td>
+        <td class="num optprice">${money(o.total)}</td>
+      </tr>`).join("");
+    html += `
+    <div class="secbar">Optional Upgrades — check to accept</div>
+    <table class="items opts">
+      ${optRows}
+    </table>
+    <div class="optfoot">
+      <span>Accepted upgrades total&nbsp; $______________</span>
+      <span>Adjusted contract total&nbsp; $______________</span>
+    </div>`;
+  }
+
+  html += `
+  <div class="sigs">
+    <div class="sig"><div class="l">Company Authorized Signature</div><div class="d">Date</div></div>
+    <div class="sig"><div class="l">Customer Signature</div><div class="d">Date</div></div>
+    <div class="sig"><div class="l">Customer Signature</div><div class="d">Date</div></div>
+  </div>`;
+  $("page").innerHTML = html;
+
+  const totEdit = $("totaledit");
+  if (totEdit) totEdit.addEventListener("change", () => {
+    const v = parseFloat(totEdit.value);
+    totalTarget = Number.isFinite(v) && v > 0 ? rp.pyRound(v, 2) : null;
+    rebuild();
+  });
+  const totReset = $("totalreset");
+  if (totReset) totReset.addEventListener("click", (e) => { e.preventDefault(); totalTarget = null; rebuild(); });
+  $("page").querySelectorAll("input[data-k]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const k = inp.dataset.k, f = inp.dataset.f, v = parseFloat(inp.value);
+      if (!Number.isFinite(v) || v < 0) return rebuild();
+      totalTarget = null;   // manual line edit releases a pinned total
+      overrides[k] = overrides[k] || {};
+      // unit-price edits are entered at the displayed (margin-applied) price;
+      // store the pre-margin base so later slider moves rescale correctly
+      const nm = inp.dataset.nm === "1";
+      overrides[k][f] = f === "unit_price" ? rp.pyRound(v / (nm ? 1 : marginK()), 4) : v;
+      rebuild();
+    });
+  });
+  $("page").querySelectorAll("button[data-x]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.x;
+      totalTarget = null;
+      if (key.startsWith("custom_")) customItems = customItems.filter((c) => c.key !== key);
+      else overrides[key] = Object.assign({}, overrides[key], {off: true});
+      rebuild();
+    });
+  });
+  $("page").querySelectorAll("input[data-cd]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const ci = customItems.find((c) => c.key === inp.dataset.cd);
+      if (ci) ci.description = inp.value;
+      rebuild();
+    });
+  });
+  $("page").querySelectorAll("input[data-cu]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const ci = customItems.find((c) => c.key === inp.dataset.cu);
+      if (ci) ci.unit = inp.value.trim().toUpperCase() || "EA";
+      rebuild();
+    });
+  });
+  $("page").querySelectorAll("button.addline").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      totalTarget = null;
+      customItems.push({ key: "custom_" + (++customSeq), description: "",
+                         qty: 1, unit: btn.dataset.g === "Labor" ? "HR" : "EA",
+                         unit_price: 0, total: 0, group: btn.dataset.g });
+      rebuild();
+    });
+  });
+}
+
+// --------------------------------------------------------------- jsPDF output
+function pdfFilename() {
+  const first = $("c_first").value.trim(), last = $("c_last").value.trim(), po = $("c_po").value.trim();
+  if (!first && !last) return "";
+  let base = last && first ? `${last}, ${first}` : (last || first);
+  if (po) base += " " + po;
+  return base.replace(/[\\/:*?"<>|]/g, "") + ".pdf";
+}
+
+function downloadPdf() {
+  if (!estimate) { alert("Load a measurement first."); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit: "pt", format: "letter"});
+  const est = estimate;
+  const W = 612, MX = 42, CW = W - MX * 2;
+  let y = 46;
+  const need = (h) => { if (y + h > 742) { doc.addPage(); y = 46; } };
+
+  // header
+  const img = $("logoimg");
+  try { doc.addImage(img, "PNG", MX, y, 62, 62 * (img.naturalHeight / img.naturalWidth)); } catch (e) {}
+  let hx = MX + 76;
+  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(0, 0, 0);
+  doc.text(est.company.name, hx, y + 10);
+  doc.setFont("helvetica", "normal").setFontSize(9);
+  let cy = y + 22;
+  est.company.address.forEach((l) => { doc.text(l, hx, cy); cy += 11; });
+  doc.text("Phone: " + est.company.phone, hx, cy); cy += 15;
+  doc.setFont("helvetica", "bold"); doc.text("Company Representative", hx, cy); cy += 11;
+  doc.setFont("helvetica", "normal");
+  [est.rep.name, "Phone: " + est.rep.phone, est.rep.email].forEach((l) => { doc.text(l, hx, cy); cy += 11; });
+  doc.setFont("helvetica", "bold").setFontSize(17);
+  doc.text(est.title, W - MX, y + 14, {align: "right", maxWidth: 250});
+  doc.setFont("helvetica", "normal").setFontSize(10);
+  doc.text(est.date, W - MX, y + 32, {align: "right"});
+  y = Math.max(cy + 30, y + 84);
+
+  // customer bar
+  const cust = est.customer;
+  const custLines = [cust.name || "", ...(cust.address || []), cust.phone || ""].filter(Boolean);
+  const barH = Math.max(34, custLines.length * 11 + 16);
+  need(barH + 10);
+  doc.setDrawColor(217, 220, 224).setFillColor(251, 251, 252);
+  doc.rect(MX, y, CW, barH, "FD");
+  doc.setFontSize(9);
+  let by = y + 14;
+  custLines.forEach((l, i) => {
+    doc.setFont("helvetica", i === 0 ? "bold" : "normal");
+    doc.text(l, MX + 12, by); by += 11;
+  });
+  doc.setFont("helvetica", "normal");
+  if (cust.name) doc.text("Job: " + cust.name, W - MX - 12, y + 14, {align: "right"});
+  y += barH + 12;
+
+  // sections
+  const grey = [129, 136, 142];
+  est.sections.forEach((sec) => {
+    need(30);
+    doc.setFillColor(239, 240, 242);
+    doc.rect(MX, y, CW, 20, "F");
+    doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(0, 0, 0);
+    doc.text(sec.name, MX + 10, y + 14);
+    y += 30;
+
+    doc.setFont("helvetica", "normal").setFontSize(8.5);
+    sec.bullets.forEach((b) => {
+      const wrapped = doc.splitTextToSize(b, CW - 22);
+      need(wrapped.length * 10 + 2);
+      doc.text("•", MX + 6, y);
+      doc.text(wrapped, MX + 16, y);
+      y += wrapped.length * 10 + 1;
+    });
+    if (sec.name.startsWith("Roofing")) {
+      const xs = ["- Our Crews are licensed and insured.",
+                  "- Crews will maintain safety requirement at all times during the construction process"];
+      xs.forEach((l) => { need(11); doc.text(l, MX + 6, y); y += 10; });
+    }
+    if (sec.disclaimer) {
+      const wrapped = doc.splitTextToSize(sec.disclaimer, CW);
+      need(wrapped.length * 9 + 8);
+      doc.setFontSize(7.5).setTextColor(...grey);
+      doc.text(wrapped, MX, y + 4);
+      y += wrapped.length * 9 + 8;
+      doc.setTextColor(0, 0, 0).setFontSize(8.5);
+    }
+
+    // items table
+    const cQty = W - MX - 150, cUnit = W - MX - 108, cPrice = W - MX;
+    need(16);
+    doc.setFontSize(8).setTextColor(...grey);
+    doc.text("Qty", cQty, y, {align: "right"});
+    doc.text("Unit", cUnit, y, {align: "center"});
+    doc.text("Price", cPrice, y, {align: "right"});
+    doc.setTextColor(0, 0, 0);
+    y += 12;
+    let lastGroup = null;
+    doc.setFontSize(8.5);
+    sec.items.forEach((it) => {
+      if (it.group !== lastGroup) {
+        need(14);
+        doc.setFont("helvetica", "normal");
+        doc.text(it.group, MX, y);
+        y += 12; lastGroup = it.group;
+      }
+      const wrapped = doc.splitTextToSize(it.description, CW - 190);
+      need(wrapped.length * 10 + 2);
+      doc.text(wrapped, MX + 12, y);
+      doc.text(qtyf(it.qty), cQty, y, {align: "right"});
+      doc.text(it.unit, cUnit, y, {align: "center"});
+      doc.text(money(it.total), cPrice, y, {align: "right"});
+      y += wrapped.length * 10 + 2;
+    });
+    need(20);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(cQty - 40, y, cPrice, y);
+    doc.setFont("helvetica", "bold").setFontSize(10);
+    doc.text(money(rp.sectionSubtotal(sec)), cPrice, y + 13, {align: "right"});
+    doc.setFont("helvetica", "normal");
+    y += 26;
+  });
+
+  // total + financing
+  need(60);
+  doc.setFillColor(239, 240, 242);
+  doc.rect(MX, y, CW, 26, "F");
+  doc.setFont("helvetica", "bold").setFontSize(12);
+  doc.text("TOTAL", MX + 12, y + 17);
+  doc.text(money(est.total()), W - MX - 12, y + 17, {align: "right"});
+  y += 38;
+
+  // optional upgrades — customer checks boxes on the printed copy
+  if (est.upgrade_options && est.upgrade_options.length) {
+    need(34 + est.upgrade_options.length * 34);
+    doc.setFillColor(239, 240, 242);
+    doc.rect(MX, y, CW, 20, "F");
+    doc.setFont("helvetica", "bold").setFontSize(11);
+    doc.text("Optional Upgrades — check to accept", MX + 10, y + 14);
+    y += 32;
+    for (const o of est.upgrade_options) {
+      const sellWrapped = doc.splitTextToSize(o.sell, CW - 200);
+      const rowH = Math.max(24, 12 + sellWrapped.length * 9);
+      need(rowH + 6);
+      doc.setDrawColor(0, 0, 0).setLineWidth(1.1);
+      doc.rect(MX + 2, y - 8, 10, 10);
+      doc.setLineWidth(0.4);
+      doc.setFont("helvetica", "bold").setFontSize(9);
+      doc.text(o.description, MX + 22, y, {maxWidth: CW - 210});
+      doc.setFont("helvetica", "normal").setFontSize(7.5).setTextColor(...grey);
+      doc.text(sellWrapped, MX + 22, y + 11);
+      doc.setTextColor(0, 0, 0).setFontSize(8);
+      doc.text(`${qtyf(o.qty)} ${o.unit} × ${money(o.unit_price)}`, W - MX - 84, y, {align: "right"});
+      doc.setFont("helvetica", "bold").setFontSize(9.5);
+      doc.text(money(o.total), W - MX, y, {align: "right"});
+      doc.setFont("helvetica", "normal");
+      y += rowH + 4;
+      doc.setDrawColor(239, 240, 242);
+      doc.line(MX, y - 8, W - MX, y - 8);
+    }
+    need(24);
+    doc.setFont("helvetica", "bold").setFontSize(9);
+    doc.text("Accepted upgrades total  $______________", MX, y + 6);
+    doc.text("Adjusted contract total  $______________", W - MX, y + 6, {align: "right"});
+    y += 26;
+  }
+
+  // signatures
+  need(120);
+  y += 24;
+  const sigRow = (label) => {
+    doc.setDrawColor(0, 0, 0);
+    doc.line(MX, y, MX + 300, y);
+    doc.line(MX + 330, y, W - MX, y);
+    doc.setFontSize(7.5);
+    doc.text(label, MX, y + 10);
+    doc.text("Date", MX + 330, y + 10);
+    y += 42;
+  };
+  sigRow("Company Authorized Signature");
+  sigRow("Customer Signature");
+  sigRow("Customer Signature");
+
+  doc.save(pdfFilename() || "estimate.pdf");
+}
+
+// --------------------------------------------------------------- wiring
+$("file").addEventListener("change", (e) => e.target.files[0] && handleFile(e.target.files[0]));
+const drop = $("drop");
+["dragover", "dragenter"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("armed"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("armed"); }));
+drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]));
+
+$("loadsample").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const rm = await (await fetch("demo_measurement.json")).json();
+  $("s_ice_water_sq").value = 20; $("s_gutter_lf").value = 425; $("s_downspout_lf").value = 55;
+  loadMeasurement(rm, "sample measurement");
+});
+
+const rebuildFresh = () => { totalTarget = null; rebuild(); };
+["s_static_vents","s_exhaust_vents","s_step_flashing_bd","s_sealant","s_ice_water_sq",
+ "s_extra_pipe_flashing","s_gutter_lf","s_downspout_lf"]
+  .forEach((id) => $(id).addEventListener("input", rebuildFresh));
+// Production-list customer picker — customers.json is generated from the
+// Production 25/26 sheet (names / rep / PO only; no financials shipped).
+let _customers = [];
+// Prefer the AR sheet edited in-app (Production 25/26 tab, saved in this
+// browser); fall back to the bundled snapshot.
+const _arSaved = (() => {
+  try {
+    const rows = JSON.parse(localStorage.getItem("m2e_production_rows_v1") || "null");
+    if (!Array.isArray(rows) || !rows.length) return null;
+    return rows.filter((r) => r.name).map((r) => {
+      let first = "", last = r.name;
+      if (r.name.includes(",")) { const [l, f] = r.name.split(",", 2); last = l.trim(); first = (f || "").trim(); }
+      else { const p = r.name.trim().split(/\s+/); if (p.length === 2) { first = p[0]; last = p[1]; } }
+      return { name: r.name, first, last, rep: r.rep || "", po: r.top_po || r.accu_po || "" };
+    });
+  } catch (_) { return null; }
+})();
+(_arSaved ? Promise.resolve(_arSaved)
+          : fetch("customers.json").then((r) => r.ok ? r.json() : [])).then((list) => {
+  _customers = list || [];
+  const sel = $("custpick");
+  _customers.forEach((c, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = c.name + (c.rep ? " · " + c.rep : "") + (c.po ? " · PO " + c.po : "");
+    sel.appendChild(opt);
+  });
+}).catch(() => {});
+// Pre-fill from a Customers-tab "Start estimate" link (?first=&last=&po=)
+{
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("first")) $("c_first").value = qs.get("first");
+  if (qs.get("last")) $("c_last").value = qs.get("last");
+  if (qs.get("po")) $("c_po").value = qs.get("po");
+}
+$("custpick").addEventListener("change", () => {
+  const c = _customers[+$("custpick").value];
+  if (!c) return;
+  $("c_first").value = c.first || "";
+  $("c_last").value = c.last || "";
+  if (c.po) $("c_po").value = c.po;
+  rebuild();
+});
+
+["c_first","c_last","c_addr1","c_addr2","c_phone","c_po","c_title","c_date"]
+  .forEach((id) => $(id).addEventListener("input", rebuild));
+$("s_include_gutters").addEventListener("change", rebuildFresh);
+$("margin").addEventListener("input", () => { marginPct = +$("margin").value; totalTarget = null; rebuild(); });
+["u_class4", "u_gutters", "u_guards", "u_downspouts"].forEach((id) => $(id).addEventListener("change", rebuild));
+["u_class4_sq", "u_downspouts_ct"].forEach((id) => $(id).addEventListener("input", rebuild));
+updateMarginAndUpgradeUi();
+$("download").addEventListener("click", downloadPdf);
+$("print").addEventListener("click", () => window.print());
+</script>
+</body></html>

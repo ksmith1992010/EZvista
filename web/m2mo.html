@@ -1,0 +1,696 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista Material Order — m2mo</title>
+<link rel="icon" href="logo.png">
+<script src="pdf.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="roofparse.js"></script>
+<style>
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
+  /* ---- site tabs ---- */
+  .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
+  .tabs a{padding:9px 18px;background:#f7f8f9;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+    font-weight:700;font-size:13px;color:var(--grey);text-decoration:none}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:#fff;color:var(--ink);border-top:3px solid var(--red);padding-top:7px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+  .tabs a span{font-weight:400;color:var(--grey);font-size:11px;margin-left:6px}
+  .wrap{display:flex;gap:18px;max-width:1340px;margin:0 auto 18px;padding:0 14px;align-items:flex-start}
+  @media (max-width:980px){.wrap{flex-direction:column}.panel{width:100%!important}}
+  /* ---- control panel (left rail) ---- */
+  .panel{width:400px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
+  .panel h2{font-size:14px;margin:26px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
+  .panel h2:first-of-type{margin-top:22px}
+  .brand{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .brand img{width:52px;height:auto}
+  .apptitle b{font-size:16px;letter-spacing:.01em}
+  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
+  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed .dropbig{color:var(--red)}
+  .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
+  .drop input{display:none}
+  .privacy{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+  .samplerow{margin-top:8px;font-size:12px}
+  .samplerow a{color:var(--red);font-weight:700;text-decoration:none}
+  .samplerow a:hover{text-decoration:underline}
+  .status{margin-top:8px;font-size:12px}
+  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
+  .meas{background:#fbfbfc;border:1px solid var(--line);padding:8px 10px;font-size:12px;line-height:1.6;margin-top:8px}
+  .meas b{font-variant-numeric:tabular-nums}
+  .warn{color:#8a6d00;font-size:11px;margin-top:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .grid label,.stack label{display:block;font-size:11px;color:var(--grey);margin-top:6px}
+  input[type=text],input[type=number],input[type=date],select{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font:inherit;background:#fff}
+  input[type=number]{text-align:right}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .pills button{padding:5px 9px;border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;font:inherit}
+  .pills button:hover{border-color:var(--salmon)}
+  .pills button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pills button .sug{color:var(--red);font-weight:700}
+  .pills button.sel .sug{color:var(--salmon)}
+  .chk{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px}
+  .mini{font-size:11px;color:var(--grey);margin-top:6px}
+  .actions{margin-top:20px;display:flex;gap:8px}
+  .actions button{flex:1;padding:10px;border:0;border-radius:5px;font:700 13px Arial;cursor:pointer}
+  .go{background:var(--red);color:#fff}
+  .alt{background:var(--bar);color:var(--ink)}
+  /* ---- order document (right panel) ---- */
+  .page{flex:1;min-width:0;background:#fff;padding:34px 40px 48px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .empty{color:var(--grey);text-align:center;padding:60px 0}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+  .co{display:flex;gap:14px}
+  .co img{width:96px;height:auto;align-self:flex-start}
+  .co .info b{font-size:13px}
+  .co .info{font-size:12px;line-height:1.45}
+  .title{text-align:right;max-width:320px}
+  .title h1{margin:0;font-size:25px;font-weight:700;line-height:1.1}
+  .title .sub{margin-top:6px;font-size:13px;color:var(--grey)}
+  .ostrip{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);margin:24px 0 0;font-size:12px}
+  .ostrip div{padding:8px 12px;border-right:1px solid var(--line)}
+  .ostrip div:last-child{border-right:0}
+  .ostrip small{display:block;color:var(--grey);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .ostrip b{font-size:13px;font-variant-numeric:tabular-nums}
+  .shipblk{display:flex;justify-content:space-between;gap:20px;border:1px solid var(--line);border-top:0;background:#fbfbfc;padding:12px 16px;font-size:12px;line-height:1.55}
+  .shipblk b{font-size:12.5px}
+  .shipblk .note{color:var(--grey);font-size:11px}
+  table.items{width:100%;border-collapse:collapse;margin-top:18px}
+  table.items td{padding:6px 6px;font-size:12.5px;vertical-align:top;border-bottom:1px solid var(--bar)}
+  table.items .head td{color:var(--grey);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--ink);padding-bottom:4px}
+  table.items .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  table.items .ctr{text-align:center;width:52px;color:#2a2a2a}
+  table.items .itemno{width:86px;color:#2a2a2a;font-variant-numeric:tabular-nums}
+  table.items input{width:70px;padding:2px 4px;border:1px solid transparent;border-radius:3px;font:inherit;text-align:right;background:transparent}
+  table.items input:hover,table.items input:focus{border-color:var(--line);background:#fbfbfc;outline:none}
+  .badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;border-radius:3px;padding:1px 5px;vertical-align:1px}
+  .badge.auto{background:#ffe9e8;color:var(--red)}
+  .badge.scope{background:var(--bar);color:var(--grey)}
+  .calc{font-size:10.5px;color:var(--grey);margin-top:2px}
+  .totals{margin-top:14px;margin-left:auto;width:320px;font-size:12.5px}
+  .totals .row{display:flex;justify-content:space-between;padding:4px 8px;font-variant-numeric:tabular-nums}
+  .totals .row.grand{background:var(--bar);font-weight:700;font-size:15px;padding:10px 12px;margin-top:6px}
+  .onotes{margin-top:18px;font-size:11px;color:#2a2a2a;line-height:1.6}
+  .onotes b{font-size:11px}
+  .pricenote{font-size:11px;color:var(--grey);margin-top:10px;text-align:right}
+</style></head><body><script src="gate.js"></script>
+<div class="tabs">
+  <a href="index.html">Estimate Creator <span>m2e</span></a>
+  <a class="on" href="m2mo.html">Material Order Generator <span>m2mo</span></a>
+  <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
+  <a href="customers.html">Production <span>AR</span></a>
+</div>
+<div class="wrap">
+
+  <!-- ======================= controls ======================= -->
+  <div class="panel">
+    <div class="brand">
+      <img src="logo.png" alt="Vista Exterior Construction" id="logoimg">
+      <div class="apptitle"><b>Material Order</b>
+        <span>Measurement → supplier order → PDF</span></div>
+    </div>
+
+    <h2>1 · Measurement</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="application/pdf">
+      <div class="dropbig">Drop a GAF QuickMeasure PDF</div>
+      <div class="dropsub">or tap to choose a file</div>
+    </label>
+    <div class="privacy">Parsed entirely in your browser — the PDF never leaves this device.</div>
+    <div class="samplerow"><a href="#" id="loadsample">Or try it with sample data →</a></div>
+    <div class="status" id="status"></div>
+    <div class="meas" id="meas" hidden></div>
+
+    <h2>2 · Waste &amp; scope</h2>
+    <label>Waste % (★ = GAF suggested)</label>
+    <div class="pills" id="waste"></div>
+    <div class="grid">
+      <label>Static vents (EA)<input type="number" id="s_static_vents" value="6" min="0" step="1"></label>
+      <label>Exhaust vents (EA)<input type="number" id="s_exhaust_vents" value="1" min="0" step="1"></label>
+      <label>Step flashing (BD)<input type="number" id="s_step_flashing_bd" value="1" min="0" step="1"></label>
+      <label>Sealant (TB)<input type="number" id="s_sealant" value="2" min="0" step="1"></label>
+      <label>Ice &amp; water (SQ)<input type="number" id="s_ice_water_sq" value="0" min="0" step="0.5"></label>
+      <label>Extra pipe flashing<input type="number" id="s_extra_pipe_flashing" value="0" min="0" step="1"></label>
+    </div>
+
+    <h2>3 · Materials &amp; finish</h2>
+    <div class="stack">
+      <label>Field shingle
+        <select id="m_product">
+          <option>Owens Corning TruDefinition Duration</option>
+          <option>Owens Corning Duration FLEX (Class 4)</option>
+          <option>Owens Corning Oakridge</option>
+          <option>GAF Timberline HDZ</option>
+          <option>Atlas Pinnacle Pristine</option>
+          <option>TAMKO Heritage</option>
+        </select></label>
+      <label>Shingle color
+        <select id="m_shingle_color">
+          <option>Sierra Gray</option><option>Onyx Black</option><option>Estate Gray</option>
+          <option>Driftwood</option><option>Desert Tan</option><option>Brownwood</option>
+          <option>Teak</option><option>Amber</option><option>Quarry Gray</option>
+          <option>Slatestone Gray</option>
+        </select></label>
+      <label>Underlayment
+        <select id="m_underlayment">
+          <option value="synthetic">Synthetic underlayment (10 SQ/RL)</option>
+          <option value="felt30">Felt 30# (2 SQ/RL)</option>
+          <option value="felt15">Felt 15# (4 SQ/RL)</option>
+        </select></label>
+      <label>Drip edge color
+        <select id="m_drip_color">
+          <option>White</option><option>Brown</option><option>Black</option><option value="">Mill Finish</option>
+        </select></label>
+      <label>Metals color — one pick for all metal accessories (pipe jacks, vents, step)</label>
+      <div class="pills" id="metals">
+        <button data-c="Black" class="sel">Black</button>
+        <button data-c="Brown">Brown</button>
+        <button data-c="Silver">Silver</button>
+      </div>
+    </div>
+
+    <h2>4 · Delivery &amp; PO</h2>
+    <div class="grid">
+      <label>Account #<input type="text" id="d_account" placeholder="ABC account"></label>
+      <label>PO #<input type="text" id="d_po" placeholder="26-___"></label>
+    </div>
+    <div class="stack">
+      <label>Branch<input type="text" id="d_branch" value="ABC Supply — Kansas City, MO"></label>
+      <label>Job-site street<input type="text" id="d_addr1"></label>
+      <label>City, State ZIP<input type="text" id="d_addr2"></label>
+    </div>
+    <label style="display:block;font-size:11px;color:var(--grey);margin-top:8px">Ship via</label>
+    <div class="pills" id="shipvia">
+      <button data-v="Deliver" class="sel">Deliver</button>
+      <button data-v="Customer Pickup">Customer Pickup</button>
+    </div>
+    <div class="grid">
+      <label>Requested date<input type="date" id="d_date"></label>
+      <label>Time
+        <select id="d_time"><option>Anytime</option><option>AM</option><option>PM</option></select></label>
+    </div>
+
+    <h2>5 · Order options</h2>
+    <div class="grid">
+      <label>Overage buffer %<input type="number" id="o_overage" value="0" min="0" step="1"></label>
+      <label>Tax %<input type="number" id="o_tax" value="0" min="0" step="0.01"></label>
+      <label>Freight $<input type="number" id="o_freight" value="0" min="0" step="0.01"></label>
+      <label>Other charges $<input type="number" id="o_other" value="0" min="0" step="0.01"></label>
+    </div>
+    <label style="display:block;font-size:11px;color:var(--grey);margin-top:8px">Round shingles up to</label>
+    <div class="pills" id="roundup">
+      <button data-r="uom" class="sel">Bundle</button>
+      <button data-r="square">Square (3 BD)</button>
+      <button data-r="pallet">Pallet (42 BD)</button>
+    </div>
+    <div class="chk"><input type="checkbox" id="o_split">
+      <label for="o_split" style="margin:0">Split delivery — shingles roof-loaded, accessories ground-dropped</label></div>
+    <div class="chk"><input type="checkbox" id="o_alternates">
+      <label for="o_alternates" style="margin:0">Accept equivalent alternates if out of stock</label></div>
+
+    <div class="actions">
+      <button class="go" id="download">Download PDF</button>
+      <button class="alt" id="print">Print</button>
+    </div>
+    <div class="mini" id="fname"></div>
+  </div>
+
+  <!-- ======================= live order document ======================= -->
+  <div class="page" id="page"><div class="empty">Upload a measurement PDF (or load the sample) to build the material order.</div></div>
+</div>
+
+<script>
+"use strict";
+const rp = window.roofparse;
+const $ = (id) => document.getElementById(id);
+const COMPANY = {
+  name: "Vista Exterior Construction",
+  address: [],
+  phone: "",
+};
+
+let measurement = null;      // parsed RoofMeasurement
+let wastePct = null;         // selected waste %, null = engine default
+let metalsColor = "Black";   // ONE pick applied to all metal accessories
+let shipVia = "Deliver";
+let roundUpTo = "uom";
+let overrides = {};          // line key -> {qty, unit_price}
+let order = null;            // last built order
+
+const money = (x) => "$" + x.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function today() {
+  const d = new Date();
+  return String(d.getMonth()+1).padStart(2,"0") + "/" + String(d.getDate()).padStart(2,"0") + "/" + d.getFullYear();
+}
+
+// --------------------------------------------------------------- PDF intake
+// (same in-browser extraction the estimator uses — pdf.js text + positional
+// "Suggested" waste detection)
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+}
+
+async function extractPdf(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const pageLines = [];
+  let suggested = null;
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const toks = tc.items
+      .filter((it) => it.str && it.str.trim())
+      .map((it) => ({str: it.str.trim(), x: it.transform[4], y: it.transform[5], w: it.width || 0}));
+
+    const lines = [];
+    for (const t of toks) {
+      let ln = lines.find((l) => Math.abs(l.y - t.y) < 2.5);
+      if (!ln) { ln = {y: t.y, toks: []}; lines.push(ln); }
+      ln.toks.push(t);
+    }
+    lines.sort((a, b) => b.y - a.y);
+    for (const ln of lines) {
+      ln.toks.sort((a, b) => a.x - b.x);
+      pageLines.push(ln.toks.map((t) => t.str).join(" "));
+    }
+
+    if (suggested === null) {
+      const sugg = toks.find((t) => t.str === "Suggested");
+      const wasteHdr = toks.find((t) => t.str === "Waste");
+      if (sugg && wasteHdr) {
+        const pcts = toks.filter((t) => Math.abs(t.y - wasteHdr.y) < 3 && /^\d+%$/.test(t.str));
+        if (pcts.length) {
+          const sx = sugg.x + sugg.w / 2;
+          const nearest = pcts.reduce((a, b) =>
+            Math.abs((a.x + a.w/2) - sx) <= Math.abs((b.x + b.w/2) - sx) ? a : b);
+          suggested = parseFloat(nearest.str.replace("%", ""));
+        }
+      }
+    }
+  }
+  return {text: pageLines.join("\n"), suggested};
+}
+
+async function handleFile(file) {
+  const st = $("status");
+  st.className = "status"; st.textContent = "Parsing " + file.name + " …";
+  try {
+    const {text, suggested} = await extractPdf(file);
+    const rm = rp.parseText(text);
+    if (suggested !== null) {
+      rm.suggested_waste_pct = suggested;
+      for (const row of rm.waste_table)
+        if (Math.abs(row.waste_pct - suggested) < 0.01) row.suggested = true;
+    }
+    loadMeasurement(rm, file.name);
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = "Could not parse: " + e.message;
+  }
+}
+
+function loadMeasurement(rm, label) {
+  measurement = rm;
+  wastePct = null;
+  overrides = {};
+  const st = $("status");
+  const conf = Math.round((rm.source.confidence || 0) * 100);
+  st.className = "status " + (conf >= 80 ? "ok" : "err");
+  st.textContent = `Parsed ${label} — ${conf}% of core fields captured` +
+                   (rm.warnings.length ? ` · ${rm.warnings.length} warning(s)` : "");
+  const t = rm.totals, L = rm.lengths_ft, pen = rm.penetrations;
+  $("meas").hidden = false;
+  $("meas").innerHTML =
+    `Roof area <b>${(t.roof_area_sqft||0).toLocaleString()}</b> sq ft · ` +
+    `<b>${t.squares ?? "?"}</b> SQ · ${t.facets ?? "?"} facets · pitch <b>${t.predominant_pitch ?? "?"}</b><br>` +
+    `Eaves <b>${L.eaves ?? "—"}</b> · Rakes <b>${L.rakes ?? "—"}</b> · Valleys <b>${L.valleys ?? "—"}</b> · ` +
+    `Ridge cap <b>${L.ridge_cap ?? "—"}</b> ft · Penetrations <b>${pen.count ?? "—"}</b>` +
+    (rm.warnings.length ? `<div class="warn">⚠ ${rm.warnings.join("; ")}</div>` : "");
+  // code-driven ice & water default: 3' eave band + valleys (same as the CLI)
+  const iw = rp.pyRound((L.eaves || 0) * 3 / 100 + (L.valleys || 0) * 6 / 100, 1);
+  if (iw > 0) $("s_ice_water_sq").value = iw;
+  if (rm.source.address && !$("d_addr1").value) {
+    const parts = rm.source.address.split(",");
+    $("d_addr1").value = parts.shift().trim();
+    $("d_addr2").value = parts.join(",").trim();
+  }
+  renderWaste();
+  rebuild();
+}
+
+// --------------------------------------------------------------- pickers
+function renderWaste() {
+  const box = $("waste");
+  box.innerHTML = "";
+  const rows = (measurement && measurement.waste_table.length)
+    ? measurement.waste_table
+    : [0, 10, 12, 15, 18, 20, 22, 25].map((w) => ({waste_pct: w, suggested: false}));
+  const eff = wastePct != null ? wastePct
+            : (measurement && measurement.suggested_waste_pct != null ? measurement.suggested_waste_pct : 15);
+  for (const row of rows) {
+    const b = document.createElement("button");
+    b.innerHTML = row.waste_pct + "%" + (row.suggested ? ' <span class="sug">★</span>' : "");
+    if (Math.abs(row.waste_pct - eff) < 0.01) b.classList.add("sel");
+    b.onclick = () => { wastePct = row.waste_pct; renderWaste(); rebuild(); };
+    box.appendChild(b);
+  }
+}
+renderWaste();
+
+function wirePills(boxId, attr, set) {
+  $(boxId).querySelectorAll("button").forEach((b) => {
+    b.addEventListener("click", () => {
+      $(boxId).querySelectorAll("button").forEach((x) => x.classList.remove("sel"));
+      b.classList.add("sel");
+      set(b.dataset[attr]);
+      rebuild();
+    });
+  });
+}
+wirePills("metals", "c", (v) => metalsColor = v);
+wirePills("shipvia", "v", (v) => shipVia = v);
+wirePills("roundup", "r", (v) => roundUpTo = v);
+
+// --------------------------------------------------------------- order build
+const UNDERLAYMENTS = {
+  synthetic: { desc: "Synthetic underlayment (10 SQ/RL)", coverage: 10 },
+  felt30:    { desc: "Felt 30# (2 SQ/RL)",  coverage: 2 },
+  felt15:    { desc: "Felt 15# (4 SQ/RL)",  coverage: 4 },
+};
+
+function scopeFromForm() {
+  return {
+    waste_pct: wastePct,
+    static_vents: +$("s_static_vents").value || 0,
+    exhaust_vents: +$("s_exhaust_vents").value || 0,
+    step_flashing_bd: +$("s_step_flashing_bd").value || 0,
+    sealant: +$("s_sealant").value || 0,
+    ice_water_sq: +$("s_ice_water_sq").value || 0,
+    extra_pipe_flashing: +$("s_extra_pipe_flashing").value || 0,
+  };
+}
+
+function optionsFromForm() {
+  return {
+    overage_pct: +$("o_overage").value || 0,
+    round_up_to: roundUpTo,
+    tax_pct: +$("o_tax").value || 0,
+    freight: +$("o_freight").value || 0,
+    other_charges: +$("o_other").value || 0,
+    shingle_color: $("m_shingle_color").value,
+    metals_color: metalsColor,
+    drip_color: $("m_drip_color").value,
+  };
+}
+
+// product picks override the generic catalog at the SKU-lookup seam; the ABC
+// API integration (TOP) later replaces this with real item #s + branch prices
+function catalogFromForm() {
+  const cat = JSON.parse(JSON.stringify(rp.GENERIC_CATALOG));
+  cat.shingle_field.desc = $("m_product").value + " (3 BD/SQ)";
+  const u = UNDERLAYMENTS[$("m_underlayment").value];
+  cat.underlayment.desc = u.desc;
+  cat.underlayment.coverage = u.coverage;
+  return cat;
+}
+
+function orderMetaFromForm() {
+  const d = $("d_date").value;   // yyyy-mm-dd
+  const nice = d ? `${d.slice(5,7)}/${d.slice(8,10)}/${d.slice(0,4)}` : "";
+  return {
+    account_no: $("d_account").value.trim(),
+    order_no: "",                // assigned by the branch
+    po_no: $("d_po").value.trim(),
+    order_date: today(),
+    branch: $("d_branch").value.trim(),
+    ship_via: shipVia,
+    job_site: [$("d_addr1").value.trim(), $("d_addr2").value.trim()].filter(Boolean),
+    requested: [nice, $("d_time").value === "Anytime" ? "" : $("d_time").value].filter(Boolean).join(" "),
+  };
+}
+
+function applyOverrides(o) {
+  for (const l of o.lines) {
+    const ov = overrides[l.key] || {};
+    if (ov.qty != null) l.qty = ov.qty;
+    if (ov.unit_price != null) l.unit_price = ov.unit_price;
+    l.ext_price = l.unit_price != null ? rp.pyRound(l.qty * l.unit_price, 2) : null;
+  }
+  return o;
+}
+
+function rebuild() {
+  if (!measurement) return;
+  order = applyOverrides(rp.buildMaterialOrder(
+    measurement, orderMetaFromForm(), scopeFromForm(), optionsFromForm(), catalogFromForm()));
+  renderOrder(order);
+  const f = pdfFilename();
+  $("fname").textContent = f ? "PDF will save as: " + f : "";
+}
+
+// --------------------------------------------------------------- render
+function esc(s){const d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML;}
+const dash = (v) => v == null ? "—" : money(v);
+
+function renderOrder(o) {
+  const opts = o.options;
+  let rows = "";
+  for (const l of o.lines) {
+    rows += `<tr>
+      <td class="itemno">${esc(l.item_no) || "—"}</td>
+      <td>${esc(l.description)}
+        <div class="calc"><span class="badge ${l.kind === "auto" ? "auto" : "scope"}">${l.kind === "auto" ? "AUTO" : "SCOPE"}</span> ${esc(l.calc)}</div></td>
+      <td class="num"><input data-k="${l.key}" data-f="qty" type="number" step="1" min="0" value="${l.qty}"></td>
+      <td class="ctr">${esc(l.uom)}</td>
+      <td class="num"><input data-k="${l.key}" data-f="unit_price" type="number" step="0.01" min="0"
+        placeholder="—" value="${l.unit_price != null ? l.unit_price : ""}"></td>
+      <td class="num" style="min-width:78px">${l.ext_price != null ? money(l.ext_price) : "—"}</td>
+    </tr>`;
+  }
+
+  const notes = [];
+  if ($("o_split").checked) notes.push("<b>Split delivery:</b> shingles roof-loaded; accessories ground-dropped.");
+  if ($("o_alternates").checked) notes.push("<b>Alternates:</b> equivalent substitutes accepted if out of stock — confirm color match.");
+  if (opts.overage_pct > 0) notes.push(`<b>Overage buffer:</b> +${opts.overage_pct}% applied to calculated quantities.`);
+
+  const sub = o.subtotal(), tax = o.tax(), tot = o.total();
+  $("page").innerHTML = `
+  <div class="top">
+    <div class="co">
+      <img src="logo.png" alt="logo">
+      <div class="info">
+        <b>${esc(COMPANY.name)}</b><br>${COMPANY.address.map(esc).join("<br>")}<br>Phone: ${esc(COMPANY.phone)}
+      </div>
+    </div>
+    <div class="title"><h1>MATERIAL ORDER</h1>
+      <div class="sub">${esc(o.branch || "Branch TBD")}</div></div>
+  </div>
+  <div class="ostrip">
+    <div><small>Account #</small><b>${esc(o.account_no) || "—"}</b></div>
+    <div><small>Order #</small><b>${esc(o.order_no) || "—"}</b></div>
+    <div><small>PO #</small><b>${esc(o.po_no) || "—"}</b></div>
+    <div><small>Order date</small><b>${esc(o.order_date)}</b></div>
+  </div>
+  <div class="shipblk">
+    <div><b>Ship via: ${esc(o.ship_via)}</b><br>
+      ${o.job_site.length ? o.job_site.map(esc).join("<br>") : '<span class="note">Job-site address —</span>'}</div>
+    <div style="text-align:right"><b>Requested</b><br>${esc(o.requested) || '<span class="note">—</span>'}</div>
+  </div>
+  <table class="items">
+    <tr class="head"><td>Item #</td><td>Product</td><td class="num">Qty</td><td class="ctr">UOM</td>
+      <td class="num">Price/Unit</td><td class="num">Ext. Price</td></tr>
+    ${rows}
+  </table>
+  <div class="totals">
+    <div class="row"><span>Subtotal</span><span>${dash(sub)}</span></div>
+    <div class="row"><span>Other charges</span><span>${money(opts.other_charges || 0)}</span></div>
+    <div class="row"><span>Freight</span><span>${money(opts.freight || 0)}</span></div>
+    <div class="row"><span>Tax (${(opts.tax_pct || 0).toFixed(2)}%)</span><span>${dash(tax)}</span></div>
+    <div class="row grand"><span>ORDER TOTAL</span><span>${dash(tot)}</span></div>
+  </div>
+  <div class="pricenote">Item #s &amp; prices populate from the ABC Supply catalog (TOP integration) —
+    or type Price/Unit from your branch quote.</div>
+  ${notes.length ? `<div class="onotes">${notes.join("<br>")}</div>` : ""}`;
+
+  $("page").querySelectorAll("input[data-k]").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const k = inp.dataset.k, f = inp.dataset.f;
+      const v = parseFloat(inp.value);
+      overrides[k] = overrides[k] || {};
+      if (!Number.isFinite(v) || v < 0) delete overrides[k][f];
+      else overrides[k][f] = f === "qty" ? Math.max(0, Math.round(v)) : v;
+      rebuild();
+    });
+  });
+}
+
+// --------------------------------------------------------------- jsPDF output
+function pdfFilename() {
+  const po = $("d_po").value.trim();
+  const site = $("d_addr1").value.trim();
+  let base = po ? "PO " + po : (site || "");
+  if (!base) return "";
+  return (base + " Material Order").replace(/[\\/:*?"<>|]/g, "") + ".pdf";
+}
+
+function downloadPdf() {
+  if (!order) { alert("Load a measurement first."); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit: "pt", format: "letter"});
+  const o = order, opts = o.options;
+  const W = 612, MX = 42, CW = W - MX * 2;
+  const grey = [129, 136, 142];
+  let y = 46;
+  const need = (h) => { if (y + h > 742) { doc.addPage(); y = 46; } };
+
+  // header
+  const img = $("logoimg");
+  try { doc.addImage(img, "PNG", MX, y, 56, 56 * (img.naturalHeight / img.naturalWidth)); } catch (e) {}
+  const hx = MX + 70;
+  doc.setFont("helvetica", "bold").setFontSize(11).setTextColor(0, 0, 0);
+  doc.text(COMPANY.name, hx, y + 10);
+  doc.setFont("helvetica", "normal").setFontSize(9);
+  let cy = y + 22;
+  COMPANY.address.forEach((l) => { doc.text(l, hx, cy); cy += 11; });
+  doc.text("Phone: " + COMPANY.phone, hx, cy);
+  doc.setFont("helvetica", "bold").setFontSize(17);
+  doc.text("MATERIAL ORDER", W - MX, y + 14, {align: "right"});
+  doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...grey);
+  doc.text(o.branch || "Branch TBD", W - MX, y + 30, {align: "right"});
+  doc.setTextColor(0, 0, 0);
+  y += 78;
+
+  // order strip
+  need(40);
+  doc.setDrawColor(217, 220, 224);
+  doc.rect(MX, y, CW, 34);
+  const cells = [["ACCOUNT #", o.account_no || "—"], ["ORDER #", o.order_no || "—"],
+                 ["PO #", o.po_no || "—"], ["ORDER DATE", o.order_date]];
+  cells.forEach(([lab, val], i) => {
+    const cx = MX + (CW / 4) * i;
+    if (i) doc.line(cx, y, cx, y + 34);
+    doc.setFontSize(6.5).setTextColor(...grey);
+    doc.text(lab, cx + 8, y + 12);
+    doc.setFontSize(10).setTextColor(0, 0, 0).setFont("helvetica", "bold");
+    doc.text(String(val), cx + 8, y + 26);
+    doc.setFont("helvetica", "normal");
+  });
+  y += 34;
+
+  // ship block
+  const siteLines = o.job_site.length ? o.job_site : ["Job-site address —"];
+  const blkH = Math.max(40, 24 + siteLines.length * 11);
+  need(blkH);
+  doc.setFillColor(251, 251, 252);
+  doc.rect(MX, y, CW, blkH, "FD");
+  doc.setFont("helvetica", "bold").setFontSize(9);
+  doc.text("Ship via: " + o.ship_via, MX + 10, y + 15);
+  doc.setFont("helvetica", "normal").setFontSize(9);
+  let sy = y + 27;
+  siteLines.forEach((l) => { doc.text(l, MX + 10, sy); sy += 11; });
+  doc.setFont("helvetica", "bold");
+  doc.text("Requested", W - MX - 10, y + 15, {align: "right"});
+  doc.setFont("helvetica", "normal");
+  doc.text(o.requested || "—", W - MX - 10, y + 27, {align: "right"});
+  y += blkH + 16;
+
+  // items table
+  const cQty = MX + 348, cUom = MX + 382, cPrice = MX + 452, cExt = W - MX;
+  need(16);
+  doc.setFontSize(7).setTextColor(...grey);
+  doc.text("ITEM #", MX, y);
+  doc.text("PRODUCT", MX + 62, y);
+  doc.text("QTY", cQty, y, {align: "right"});
+  doc.text("UOM", cUom, y, {align: "center"});
+  doc.text("PRICE/UNIT", cPrice, y, {align: "right"});
+  doc.text("EXT. PRICE", cExt, y, {align: "right"});
+  doc.setDrawColor(0, 0, 0);
+  doc.line(MX, y + 4, W - MX, y + 4);
+  doc.setTextColor(0, 0, 0);
+  y += 16;
+
+  doc.setFontSize(8.5);
+  for (const l of o.lines) {
+    const wrapped = doc.splitTextToSize(l.description, 210);
+    const rowH = wrapped.length * 10 + 11;
+    need(rowH + 4);
+    doc.setFontSize(8);
+    doc.text(l.item_no || "—", MX, y);
+    doc.setFontSize(8.5);
+    doc.text(wrapped, MX + 62, y);
+    doc.text(String(l.qty), cQty, y, {align: "right"});
+    doc.text(l.uom, cUom, y, {align: "center"});
+    doc.text(l.unit_price != null ? money(l.unit_price) : "—", cPrice, y, {align: "right"});
+    doc.text(l.ext_price != null ? money(l.ext_price) : "—", cExt, y, {align: "right"});
+    doc.setFontSize(7).setTextColor(...grey);
+    doc.text(`[${l.kind === "auto" ? "AUTO" : "SCOPE"}] ${l.calc}`, MX + 62, y + wrapped.length * 10);
+    doc.setFontSize(8.5).setTextColor(0, 0, 0);
+    y += rowH;
+    doc.setDrawColor(239, 240, 242);
+    doc.line(MX, y - 7, W - MX, y - 7);
+  }
+
+  // totals stack
+  const sub = o.subtotal(), tax = o.tax(), tot = o.total();
+  const trows = [["Subtotal", sub == null ? "—" : money(sub)],
+                 ["Other charges", money(opts.other_charges || 0)],
+                 ["Freight", money(opts.freight || 0)],
+                 [`Tax (${(opts.tax_pct || 0).toFixed(2)}%)`, tax == null ? "—" : money(tax)]];
+  need(trows.length * 14 + 40);
+  y += 4;
+  const tx = W - MX - 200;
+  doc.setFontSize(9);
+  trows.forEach(([lab, val]) => {
+    doc.text(lab, tx, y);
+    doc.text(val, cExt, y, {align: "right"});
+    y += 14;
+  });
+  doc.setFillColor(239, 240, 242);
+  doc.rect(tx - 10, y - 8, 210, 22, "F");
+  doc.setFont("helvetica", "bold").setFontSize(11);
+  doc.text("ORDER TOTAL", tx, y + 7);
+  doc.text(tot == null ? "—" : money(tot), cExt, y + 7, {align: "right"});
+  doc.setFont("helvetica", "normal");
+  y += 34;
+
+  // notes
+  const notes = [];
+  if ($("o_split").checked) notes.push("Split delivery: shingles roof-loaded; accessories ground-dropped.");
+  if ($("o_alternates").checked) notes.push("Alternates: equivalent substitutes accepted if out of stock — confirm color match.");
+  if (opts.overage_pct > 0) notes.push(`Overage buffer: +${opts.overage_pct}% applied to calculated quantities.`);
+  if (notes.length) {
+    need(notes.length * 11 + 10);
+    doc.setFontSize(8).setTextColor(...grey);
+    notes.forEach((n) => { doc.text("• " + n, MX, y); y += 11; });
+    doc.setTextColor(0, 0, 0);
+  }
+
+  doc.save(pdfFilename() || "material-order.pdf");
+}
+
+// --------------------------------------------------------------- wiring
+$("file").addEventListener("change", (e) => e.target.files[0] && handleFile(e.target.files[0]));
+const drop = $("drop");
+["dragover", "dragenter"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("armed"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("armed"); }));
+drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && handleFile(e.dataTransfer.files[0]));
+
+$("loadsample").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const rm = await (await fetch("demo_measurement.json")).json();
+  loadMeasurement(rm, "sample measurement");
+});
+
+["s_static_vents","s_exhaust_vents","s_step_flashing_bd","s_sealant","s_ice_water_sq",
+ "s_extra_pipe_flashing","o_overage","o_tax","o_freight","o_other",
+ "d_account","d_po","d_branch","d_addr1","d_addr2","d_date"]
+  .forEach((id) => $(id).addEventListener("input", rebuild));
+["m_product","m_shingle_color","m_underlayment","m_drip_color","d_time"]
+  .forEach((id) => $(id).addEventListener("change", rebuild));
+["o_split","o_alternates"].forEach((id) => $(id).addEventListener("change", rebuild));
+$("download").addEventListener("click", downloadPdf);
+$("print").addEventListener("click", () => window.print());
+</script>
+</body></html>

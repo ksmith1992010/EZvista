@@ -1,24 +1,19 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Production Tracker</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%232e4b44'/><path d='M12 34 32 16l20 18' stroke='%237fa173' stroke-width='6' fill='none'/><rect x='20' y='36' width='24' height='14' fill='%237fa173'/></svg>">
+<title>Production — AR &amp; Income — Measure2Estimate</title>
+<link rel="icon" href="logo.png">
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
-  /* password gate */
-  #gate{position:fixed;inset:0;background:#eceef1;display:flex;align-items:center;justify-content:center;z-index:10}
-  .gatecard{background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.12);padding:30px 36px 34px;border-radius:8px;text-align:center;width:340px}
-  .gatecard svg{width:240px;height:auto}
-  .gatecard h1{font-size:16px;margin:6px 0 16px;letter-spacing:.02em}
-  .gatecard input{width:100%;padding:9px;border:1px solid var(--line);border-radius:5px;font:inherit;text-align:center}
-  .gatecard button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:5px;background:var(--red);color:#fff;font:700 13px Arial;cursor:pointer}
-  #gateerr{color:#b3261e;font-size:12px;margin-top:8px;min-height:15px}
-  /* page */
-  .wrap{max-width:1500px;margin:14px auto 24px;padding:16px 18px 24px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .tabs{display:flex;gap:6px;max-width:1500px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
+  .tabs a{padding:9px 18px;background:#f7f8f9;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+    font-weight:700;font-size:13px;color:var(--grey);text-decoration:none}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:#fff;color:var(--ink);border-top:3px solid var(--red);padding-top:7px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+  .tabs a span{font-weight:400;color:var(--grey);font-size:11px;margin-left:6px}
+  .wrap{max-width:1500px;margin:0 auto 24px;padding:16px 18px 24px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08)}
   .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-  .head svg{width:92px;height:auto;flex-shrink:0}
   .head b{font-size:17px}
   .head .src{font-size:11px;color:var(--grey)}
   .head input[type=search]{min-width:200px;padding:7px 11px;border:1px solid var(--line);border-radius:6px;font:inherit}
@@ -26,7 +21,7 @@
     color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
   .btn:hover{border-color:var(--salmon);color:var(--red)}
   .btn.primary{background:var(--red);border-color:var(--red);color:#fff}
-  .btn.primary:hover{background:#24403a;color:#fff}
+  .btn.primary:hover{background:#e02023;color:#fff}
   .tblwrap{overflow-x:auto;border:1px solid var(--line)}
   table{border-collapse:collapse;width:100%;min-width:1240px;font-size:12px}
   th,td{border-bottom:1px solid #eef1f4;border-right:1px solid #f3f5f7;padding:2px 4px;white-space:nowrap}
@@ -41,9 +36,11 @@
   td.chk{text-align:center}
   tr.pif td{background:#f0fdf4}
   tr.ar td{background:#fffbeb}
+  tr.pif td input,{background:transparent}
   .jobcell{font-weight:700}
   .rowx{border:0;background:none;color:var(--grey);cursor:pointer;font-size:14px;padding:0 6px}
-  .rowx:hover{color:#b3261e}
+  .rowx:hover{color:var(--red)}
+  .estgo{color:var(--red);font-weight:700;text-decoration:none;font-size:11px}
   tfoot td{background:var(--bar);font-weight:700;border-top:2px solid var(--ink);padding:6px}
   .below{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
   .savenote{font-size:11px;color:var(--grey)}
@@ -56,7 +53,6 @@
   .ovrow b{font-variant-numeric:tabular-nums}
   .ovrow.big b{color:var(--red);font-size:15px}
   .ovrow input{width:96px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;font:inherit;text-align:right}
-  .ovrow input[type=date]{width:130px;text-align:left}
   .targets{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
   .pay3{grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-top:10px}
   .ovwide{grid-column:span 2}
@@ -74,11 +70,6 @@
   .targets td,.targets th{padding:3px 6px;border-bottom:1px solid #eef1f4;text-align:right;font-variant-numeric:tabular-nums}
   .targets th{color:var(--grey);font-size:10.5px}
   .targets td:first-child,.targets th:first-child{text-align:left}
-  .targets td input{border:1px solid transparent;background:transparent;font:inherit;padding:2px 4px;border-radius:3px}
-  .targets td input:hover{border-color:var(--line)}
-  .targets td input:focus{border-color:var(--salmon);background:#fff;outline:none}
-  .targets td input[type=text]{width:100%;text-align:left}
-  .targets td input[type=number]{width:96px;text-align:right}
   .mini{font-size:11px;color:var(--grey);margin-top:8px}
   /* Active / PIF sub-tabs */
   .subtabs{display:flex;gap:6px;margin:2px 0 10px}
@@ -87,66 +78,16 @@
   .subtabs button span{font-weight:400;font-size:11px;margin-left:5px}
   .subtabs button.on{background:#fff;color:var(--ink);border-bottom-color:var(--red)}
   .subtabs button:hover{color:var(--ink)}
-  .pwbtn{margin-left:auto}
-</style></head><body>
-
-<!-- Vista Exterior Construction logo (vector, white background) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="vlogo" viewBox="0 0 900 650">
-    <rect width="900" height="650" fill="#ffffff"/>
-    <g fill="#7fa173">
-      <polygon points="140,300 118,352 162,352"/>
-      <polygon points="140,332 108,398 172,398"/>
-      <polygon points="140,374 100,452 180,452"/>
-      <rect x="135" y="452" width="10" height="20"/>
-      <polygon points="200,258 176,315 224,315"/>
-      <polygon points="200,294 166,366 234,366"/>
-      <polygon points="200,340 158,426 242,426"/>
-      <rect x="195" y="426" width="10" height="26"/>
-      <polygon points="256,306 236,354 276,354"/>
-      <polygon points="256,336 228,398 284,398"/>
-      <polygon points="256,376 220,452 292,452"/>
-      <rect x="251" y="452" width="10" height="18"/>
-    </g>
-    <polygon points="95,462 480,198 560,255 235,462" fill="#7fa173"/>
-    <polygon points="120,470 548,257 568,272 165,478" fill="#2e4b44"/>
-    <rect x="355" y="172" width="52" height="100" fill="#2e4b44"/>
-    <rect x="344" y="156" width="74" height="20" fill="#2e4b44"/>
-    <rect x="344" y="176" width="74" height="6" fill="#7fa173"/>
-    <polygon points="505,205 330,462 690,462" fill="#2e4b44"/>
-    <g fill="#7fa173">
-      <rect x="468" y="330" width="32" height="32"/>
-      <rect x="508" y="330" width="32" height="32"/>
-      <rect x="468" y="370" width="32" height="32"/>
-      <rect x="508" y="370" width="32" height="32"/>
-    </g>
-    <polygon points="705,285 575,462 835,462" fill="#2e4b44"/>
-    <polygon points="705,335 615,462 795,462" fill="#ffffff"/>
-    <polygon points="705,368 648,462 762,462" fill="#7fa173"/>
-    <polygon points="705,402 672,462 738,462" fill="#ffffff"/>
-    <path d="M70,492 Q460,452 850,492 L850,504 Q460,466 70,504 Z" fill="#7fa173"/>
-    <text x="450" y="575" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="64" letter-spacing="6" fill="#2e4b44">VISTA EXTERIOR</text>
-    <text x="450" y="624" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" letter-spacing="13" fill="#40615a">CONSTRUCTION</text>
-    <line x1="140" y1="613" x2="218" y2="613" stroke="#40615a" stroke-width="3"/>
-    <line x1="682" y1="613" x2="760" y2="613" stroke="#40615a" stroke-width="3"/>
-  </symbol>
-</svg>
-
-<div id="gate">
-  <form id="gateform" class="gatecard">
-    <svg viewBox="0 0 900 650"><use href="#vlogo"/></svg>
-    <h1>Production Tracker</h1>
-    <input type="password" id="gatepw" placeholder="Password" autocomplete="current-password" autofocus>
-    <button type="submit">Unlock</button>
-    <div id="gateerr"></div>
-  </form>
+</style></head><body><script src="gate.js"></script>
+<div class="tabs">
+  <a href="index.html">Estimate Creator <span>m2e</span></a>
+  <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
+  <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
+  <a class="on" href="customers.html">Production <span>AR</span></a>
 </div>
-
-<div id="app" style="display:none">
 <div class="wrap">
   <div class="head">
-    <svg viewBox="0 0 900 650" role="img" aria-label="Vista Exterior Construction"><use href="#vlogo"/></svg>
-    <b>Production Tracker</b>
+    <b>Production</b>
     <span class="savenote" id="savenote">edits save automatically on this device</span>
     <input type="search" id="q" placeholder="Filter name / rep / PO…" autocomplete="off">
     <button class="btn primary" id="addrow">+ Add customer</button>
@@ -161,11 +102,11 @@
     <table id="tbl">
       <thead><tr>
         <th style="min-width:150px" data-sort="name">Customer</th><th style="width:52px" data-sort="rep">Rep</th>
-        <th style="width:76px" data-sort="claim">Claim #</th><th style="width:76px" data-sort="po">PO #</th><th style="width:64px" data-sort="date">Date</th>
+        <th style="width:76px" data-sort="accu_po">ACCU PO</th><th style="width:76px" data-sort="top_po">TOP PO</th><th style="width:64px" data-sort="date">Date</th>
         <th class="num" style="width:96px" data-sort="acv">ACV</th><th class="num" style="width:96px" data-sort="dep">Dep.</th>
         <th class="num" style="width:96px" data-sort="mats">Mats</th><th class="num" style="width:96px" data-sort="labor">Labor</th>
-        <th style="min-width:130px" data-sort="notes">Notes</th><th style="width:40px" data-sort="installed">Inst.</th><th style="width:36px" data-sort="pif">PIF</th>
-        <th class="num" style="width:104px" data-sort="job">Job $ (ACV+Dep)</th><th style="width:36px"></th>
+        <th style="min-width:130px" data-sort="cb">CB / Notes</th><th style="width:40px" data-sort="installed">Inst.</th><th style="width:36px" data-sort="pif">PIF</th>
+        <th class="num" style="width:104px" data-sort="job">Job $ (ACV+Dep)</th><th style="width:64px"></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
       <tfoot><tr id="totviewrow"></tr><tr id="totrow"></tr></tfoot>
@@ -194,37 +135,35 @@
     </div>
     <div class="ovbox ovwide"><h4>Pipeline projection</h4>
       <div class="pipegrid">
-        <div><h5>Pipeline 1</h5>
+        <div><h5>Rep</h5>
           <div class="ovrow"><span>In pipeline</span><input type="number" step="1" data-a="p1n"></div>
           <div class="ovrow"><span>Avg profit $</span><input type="number" step="100" data-a="p1a"></div>
           <div class="ovrow"><span>Projected</span><b id="o_p1"></b></div>
         </div>
-        <div><h5>Pipeline 2</h5>
+        <div><h5>Vista</h5>
           <div class="ovrow"><span>In pipeline</span><input type="number" step="1" data-a="p2n"></div>
           <div class="ovrow"><span>Avg profit $</span><input type="number" step="100" data-a="p2a"></div>
           <div class="ovrow"><span>Projected</span><b id="o_p2"></b></div>
         </div>
       </div>
-      <div class="ovrow big"><span>All-in (income + pipeline)</span><b id="o_oapi"></b></div>
+      <div class="ovrow big"><span>OA PI (income + pipeline)</span><b id="o_oapi"></b></div>
     </div>
-    <div class="ovbox" style="grid-column:1/-1"><h4>Goals</h4>
-      <div class="ovrow" style="max-width:760px;white-space:nowrap">
-        <span>Avg profit / job</span><input type="number" step="100" data-a="perRoof">
-        <span style="margin-left:14px">Deadline</span><input type="date" data-a="deadline">
-        <span style="margin-left:14px">Weeks left</span><b id="o_weeks"></b>
-        <span style="margin-left:14px">Jobs completed</span><b id="o_done" style="color:var(--red)"></b>
+    <div class="ovbox" style="grid-column:1/-1"><h4>Roofs needed</h4>
+      <div class="ovrow" style="max-width:640px;white-space:nowrap">
+        <span>Avg profit / roof</span><input type="number" step="100" data-a="perRoof">
+        <span style="margin-left:14px">Weeks til Nov 1</span><b id="o_weeks"></b>
+        <span style="margin-left:14px">Roofs completed</span><b id="o_done" style="color:var(--red)"></b>
       </div>
       <table class="targets"><thead><tr>
-        <th>Target</th><th>Amount</th><th>Left to go</th><th>Jobs needed</th><th>Contracts / wk</th>
+        <th>Target</th><th>Amount</th><th>Left to go</th><th>Roofs needed</th><th>CTRs / week</th>
       </tr></thead><tbody id="targets"></tbody></table>
-      <div class="mini">Target names and amounts are editable — click to change them. "Left to go" measures against $$ total income.</div>
     </div>
   </div>
   <div class="ov pay3">
-    <div class="ovbox"><h4>Materials</h4>
-      <div class="ovrow"><span>Material total</span><input type="number" step="0.01" id="mat_total_in"></div>
-      <div class="ovrow"><span>Amount paid</span><input type="number" step="0.01" data-a="matPaid"></div>
-      <div class="ovrow big"><span>Amount owed</span><b id="mat_owed"></b></div>
+    <div class="ovbox"><h4>ABC</h4>
+      <div class="ovrow"><span>Material total</span><input type="number" step="0.01" id="abc_total_in"></div>
+      <div class="ovrow"><span>Amount paid</span><input type="number" step="0.01" data-a="abcPaid"></div>
+      <div class="ovrow big"><span>Amount owed</span><b id="abc_owed"></b></div>
       <div class="mini">Total prefills from the Mats column (both tabs) — type your own number to override, clear it to go back to auto. Owed = total − paid.</div>
     </div>
     <div class="ovbox"><h4>Subs</h4>
@@ -249,21 +188,15 @@
     </div>
   </div>
   <div class="below">
-    <button class="btn" id="clearall">Clear all rows</button>
-    <span class="mini">Everything you type lives only in this app (saved in this browser) — nothing is sent anywhere.
+    <button class="btn" id="resetsnap">Reset to original sheet snapshot</button>
+    <span class="mini">This sheet is an independent, personal-reference copy: everything you type lives only in this app
+      (saved in this browser) — nothing here reads from or writes to the Google Sheet, T.O.P., or anywhere else.
       Export CSV regularly for backup or to move to another device.</span>
-    <button class="btn pwbtn" id="pwbtn">Change password…</button>
   </div>
 </div>
-</div>
-
 <script>
 "use strict";
-const STORE = "vista_production_rows_v1";
-const A_STORE = "vista_ar_assumptions";
-const PW_KEY = "vista_tracker_pw";
-const SS_KEY = "vista_tracker_unlocked";
-const DEFAULT_PW = "Vista.123";
+const STORE = "m2e_production_rows_v1";
 const $id = (x) => document.getElementById(x);
 const fmt = (n) => n == null ? "—" : "$" + n.toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
 function esc(s){const d=document.createElement("div");d.textContent=s==null?"":s;return d.innerHTML;}
@@ -275,64 +208,26 @@ function money(s){
   return Number.isFinite(v) ? v : null;
 }
 
-// ---- password gate ------------------------------------------------------
-function currentPw(){ try { return localStorage.getItem(PW_KEY) || DEFAULT_PW; } catch (e) { return DEFAULT_PW; } }
-function unlock(){
-  $id("gate").style.display = "none";
-  $id("app").style.display = "";
-}
-$id("gateform").addEventListener("submit", (e) => {
-  e.preventDefault();
-  if ($id("gatepw").value === currentPw()) {
-    try { sessionStorage.setItem(SS_KEY, "1"); } catch (err) {}
-    $id("gatepw").value = "";
-    unlock();
-  } else {
-    $id("gateerr").textContent = "Wrong password";
-    $id("gatepw").value = "";
-    $id("gatepw").focus();
-  }
-});
-$id("pwbtn").addEventListener("click", () => {
-  const cur = prompt("Current password:");
-  if (cur == null) return;
-  if (cur !== currentPw()) { alert("Wrong current password."); return; }
-  const nw = prompt("New password (at least 4 characters):");
-  if (nw == null) return;
-  if (nw.length < 4) { alert("Password too short — not changed."); return; }
-  const again = prompt("Repeat new password:");
-  if (again !== nw) { alert("Passwords didn't match — not changed."); return; }
-  try { localStorage.setItem(PW_KEY, nw); } catch (e) { alert("Could not save password."); return; }
-  alert("Password changed on this device/browser. Other devices keep their own password. " +
-        "If you forget it, clearing this site's browser data resets it to the default — " +
-        "but that also erases the sheet, so keep CSV backups.");
-});
-
 // assumptions — saved per device
 const A_DEF = { bank: 0, oh: 0, p1n: 0, p1a: 0, p2n: 0, p2a: 0, perRoof: 0,
-                matPaid: 0, deadline: "2026-12-31" };
-let A = Object.assign({}, A_DEF, JSON.parse(localStorage.getItem(A_STORE) || "{}"));
+                abcPaid: 0 };
+let A = Object.assign({}, A_DEF, JSON.parse(localStorage.getItem("m2e_ar_assumptions") || "{}"));
+// One-time migration: the pipeline used to default to 6000/5000 before the
+// Rep/OTT split (rep jobs profit ~4000, OTT jobs ~6000). Only flips devices
+// still sitting on the exact old defaults.
+if (A.p1a === 6000 && A.p2a === 5000) { A.p1a = 4000; A.p2a = 6000; }
 if (!Array.isArray(A.subs)) A.subs = [];   // [{name, owed, paid}] — the Subs payables list
 if (!Array.isArray(A.reps)) A.reps = [];   // same shape — the Rep pay list
-if (!Array.isArray(A.targets)) A.targets = [
-  { label: "Goal 1", amt: 100000 },
-  { label: "Goal 2", amt: 250000 },
-  { label: "Goal 3", amt: 500000 },
-  { label: "Goal 4", amt: 1000000 },
-];
-// matTotal / laborTotal: null = auto (from the sheet's Mats/Labor columns)
-if (A.matTotal === undefined) A.matTotal = null;
+// abcTotal / laborTotal: null = auto (from the sheet's Mats/Labor columns)
+if (A.abcTotal === undefined) A.abcTotal = null;
 if (A.laborTotal === undefined) A.laborTotal = null;
-function saveA(){ localStorage.setItem(A_STORE, JSON.stringify(A)); }
+function saveA(){ localStorage.setItem("m2e_ar_assumptions", JSON.stringify(A)); }
 document.querySelectorAll("input[data-a]").forEach((inp) => {
   inp.value = A[inp.dataset.a];
   inp.addEventListener("change", () => {
-    if (inp.type === "date") A[inp.dataset.a] = inp.value || A_DEF.deadline;
-    else {
-      const v = parseFloat(inp.value);
-      if (Number.isFinite(v)) A[inp.dataset.a] = v;
-    }
-    saveA();
+    const v = parseFloat(inp.value);
+    if (Number.isFinite(v)) A[inp.dataset.a] = v;
+    localStorage.setItem("m2e_ar_assumptions", JSON.stringify(A));
     renderSummary();
   });
 });
@@ -349,12 +244,32 @@ function save(){
   saveT = setTimeout(() => { n.textContent = "edits save automatically on this device"; n.classList.remove("saved"); }, 2500);
 }
 
+function splitName(name){
+  if (name.includes(",")) { const [l, f] = name.split(",", 2).map((s) => s.trim()); return [f || "", l]; }
+  const p = name.trim().split(/\s+/);
+  return p.length === 2 ? [p[0], p[1]] : ["", name.trim()];
+}
+function estHref(r){
+  const [first, last] = splitName(r.name || "");
+  const params = new URLSearchParams();
+  if (first) params.set("first", first);
+  if (last) params.set("last", last);
+  const po = r.top_po || r.accu_po;
+  if (po) params.set("po", po);
+  return "index.html?" + params.toString();
+}
+function topHref(r){
+  // Deep-link straight to the customer card: T.O.P. resolves #find= by TOP
+  // PO first, then name. Plain homepage when the row has neither.
+  const q = (r.top_po || "").trim() || (r.name || "").trim();
+  return "https://t-o-p.netlify.app/" + (q ? "#find=" + encodeURIComponent(q) : "");
+}
 function rowClass(r){
   const job = (r.acv || 0) + (r.dep || 0);
   return r.pif ? "pif" : (r.installed && job > 0 ? "ar" : "");
 }
 
-const TXT = [["name","Customer"],["rep","Rep"],["claim","Claim #"],["po","PO #"],["date","Date"]];
+const TXT = [["name","Customer"],["rep","Rep"],["accu_po","ACCU"],["top_po","TOP"],["date","Date"]];
 const NUM = ["acv","dep","mats","labor"];
 
 function setSubtabs(){
@@ -380,11 +295,14 @@ function renderTable(){
       h += '<td><input type="number" step="0.01" class="' + (v != null && v < 0 ? "neg" : "") + '" data-i="' + i +
         '" data-f="' + f + '" value="' + (v == null ? "" : v) + '"></td>';
     });
-    h += '<td><input type="text" data-i="' + i + '" data-f="notes" value="' + escAttr(r.notes || "") + '"></td>';
+    h += '<td><input type="text" data-i="' + i + '" data-f="cb" value="' + escAttr(r.cb || "") + '"></td>';
     h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="installed"' + (r.installed ? " checked" : "") + '></td>';
     h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="pif"' + (r.pif ? " checked" : "") + '></td>';
     h += '<td class="num jobcell" id="job-' + i + '">' + (job ? fmt(job) : "") + '</td>';
-    h += '<td><button class="rowx" title="Delete row" data-x="' + i + '">×</button></td>';
+    h += '<td><a class="estgo" style="color:#3730a3" href="' + topHref(r) + '" id="top-' + i + '" target="_blank" rel="noopener" ' +
+         'title="Open this customer in T.O.P.">TOP ↗</a> ' +
+         '<a class="estgo" href="' + estHref(r) + '" id="est-' + i + '">EST →</a>' +
+         '<button class="rowx" title="Delete row" data-x="' + i + '">×</button></td>';
     h += "</tr>";
     return h;
   }).join("");
@@ -417,6 +335,8 @@ function renderTable(){
       if (inp.type === "number") inp.classList.toggle("neg", rows[i][f] != null && rows[i][f] < 0);
       const job = (rows[i].acv || 0) + (rows[i].dep || 0);
       $id("job-" + i).textContent = job ? fmt(job) : "";
+      $id("est-" + i).href = estHref(rows[i]);
+      $id("top-" + i).href = topHref(rows[i]);
       inp.closest("tr").className = rowClass(rows[i]);
       save(); renderTotals(); renderSummary();
     });
@@ -439,7 +359,7 @@ function applyFilter(){
   document.querySelectorAll("#tbody tr").forEach((tr) => {
     const r = rows[+tr.dataset.i];
     if (!r) return;
-    const hay = ((r.name || "") + " " + (r.rep || "") + " " + (r.claim || "") + " " + (r.po || "")).toLowerCase();
+    const hay = ((r.name || "") + " " + (r.rep || "") + " " + (r.accu_po || "") + " " + (r.top_po || "")).toLowerCase();
     tr.style.display = (!f || hay.indexOf(f) !== -1) ? "" : "none";
   });
 }
@@ -471,10 +391,11 @@ function renderTotals(){
     '<td></td><td></td><td></td><td class="num">' + fmt(t.acv + t.dep) + "</td><td></td>";
 }
 
-function weeksLeft(){
+function weeksToNov1(){
   const now = new Date();
-  const d = new Date((A.deadline || A_DEF.deadline) + "T23:59:59");
-  return Math.max(0, Math.round((d - now) / (7 * 86400000)));
+  let nov = new Date(now.getFullYear(), 10, 1);
+  if (nov < now) nov = new Date(now.getFullYear() + 1, 10, 1);
+  return Math.max(0, Math.round((nov - now) / (7 * 86400000)));
 }
 
 function renderSummary(){
@@ -497,44 +418,41 @@ function renderSummary(){
   $id("o_p1").textContent = fmt(p1);
   $id("o_p2").textContent = fmt(p2);
   $id("o_oapi").textContent = fmt(inc + p1 + p2);
-  const wks = weeksLeft();
+  const wks = weeksToNov1();
   $id("o_weeks").textContent = wks + " wks";
-  // Jobs completed = Installed boxes checked, both tabs
+  // Roofs completed = Installed boxes checked, both tabs
   $id("o_done").textContent = rows.filter((r) => r.installed).length;
-  $id("targets").innerHTML = A.targets.map((tg, i) => {
-    const left = tg.amt - inc;
+  const targets = [
+    { label: "Goal 1", amt: 100000, cumulative: true },
+    { label: "Goal 2", amt: 250000, cumulative: true },
+    { label: "Goal 3", amt: 500000, cumulative: true },
+    { label: "Goal 4", amt: 1000000, cumulative: true },
+  ];
+  $id("targets").innerHTML = targets.map((tg) => {
+    const left = tg.cumulative ? tg.amt - inc : tg.amt;
     const done = left <= 0;
-    const roofs = A.perRoof > 0 ? Math.ceil(left / A.perRoof) : null;
-    const ctr = wks > 0 && A.perRoof > 0 ? (left / A.perRoof / wks) : null;
-    return '<tr><td><input type="text" data-tg="' + i + '" data-tf="label" value="' + escAttr(tg.label) + '"></td>' +
-      '<td><input type="number" step="1000" data-tg="' + i + '" data-tf="amt" value="' + (tg.amt || 0) + '"></td>' +
+    const roofs = A.perRoof > 0 ? Math.ceil(left / A.perRoof) : 0;
+    const ctr = wks > 0 && A.perRoof > 0 ? (left / A.perRoof / wks) : 0;
+    return "<tr><td>" + esc(tg.label) + "</td><td>" + fmt(tg.amt) + "</td>" +
       "<td>" + (done ? "✓ hit" : fmt(left)) + "</td>" +
-      "<td>" + (done || roofs == null ? "—" : roofs) + "</td><td>" + (done || ctr == null ? "—" : ctr.toFixed(2)) + "</td></tr>";
+      "<td>" + (done ? "—" : roofs) + "</td><td>" + (done ? "—" : ctr.toFixed(2)) + "</td></tr>";
   }).join("");
   renderPayables();
 }
-$id("targets").addEventListener("change", (e) => {
-  const inp = e.target;
-  if (inp.dataset.tg == null) return;
-  const tg = A.targets[+inp.dataset.tg];
-  if (inp.dataset.tf === "label") tg.label = inp.value;
-  else tg.amt = parseFloat(inp.value) || 0;
-  saveA(); renderSummary();
-});
 
-// ---- payables: Materials + Subs (labor) + Rep pay -----------------------
+// ---- payables: ABC (materials) + Subs (labor) + Rep pay -----------------
 // Reference boxes only — they read the sheet's Mats/Labor totals but feed
-// nothing back into the income equations above. The material total and
+// nothing back into the income equations above. The ABC material total and
 // Subs labor total prefill from the sheet; typing a number overrides,
 // clearing the field goes back to auto.
 function renderPayables(){
   const t = totals();
-  const matTotal = A.matTotal != null ? A.matTotal : t.mats;
+  const abcTotal = A.abcTotal != null ? A.abcTotal : t.mats;
   const laborTotal = A.laborTotal != null ? A.laborTotal : t.labor;
-  const matIn = $id("mat_total_in"), labIn = $id("subs_labor_in");
-  if (document.activeElement !== matIn) matIn.value = Math.round(matTotal * 100) / 100;
+  const abcIn = $id("abc_total_in"), labIn = $id("subs_labor_in");
+  if (document.activeElement !== abcIn) abcIn.value = Math.round(abcTotal * 100) / 100;
   if (document.activeElement !== labIn) labIn.value = Math.round(laborTotal * 100) / 100;
-  $id("mat_owed").textContent = fmt(matTotal - (A.matPaid || 0));
+  $id("abc_owed").textContent = fmt(abcTotal - (A.abcPaid || 0));
   for (const L of PAY_LISTS) {
     let owed = 0, paid = 0;
     A[L.key].forEach((s, i) => {
@@ -589,10 +507,10 @@ PAY_LISTS.forEach((L) => {
   });
   renderPayList(L);
 });
-$id("mat_total_in").addEventListener("change", () => {
-  A.matTotal = money($id("mat_total_in").value);   // null (cleared) = auto
+$id("abc_total_in").addEventListener("change", () => {
+  A.abcTotal = money($id("abc_total_in").value);   // null (cleared) = auto
   saveA(); renderPayables();
-  if (A.matTotal == null) $id("mat_total_in").value = Math.round(totals().mats * 100) / 100;
+  if (A.abcTotal == null) $id("abc_total_in").value = Math.round(totals().mats * 100) / 100;
 });
 $id("subs_labor_in").addEventListener("change", () => {
   A.laborTotal = money($id("subs_labor_in").value);
@@ -601,7 +519,7 @@ $id("subs_labor_in").addEventListener("change", () => {
 });
 
 // ---- CSV export / import ------------------------------------------------
-const CSV_FIELDS = ["name","rep","claim","po","date","acv","dep","mats","labor","notes","installed","pif"];
+const CSV_FIELDS = ["name","rep","accu_po","top_po","date","acv","dep","mats","labor","cb","installed","pif"];
 function exportCsv(){
   const lines = [CSV_FIELDS.join(",")];
   rows.forEach((r) => {
@@ -615,7 +533,7 @@ function exportCsv(){
   const blob = new Blob([lines.join("\n")], { type: "text/csv" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "Production Tracker " + new Date().toISOString().slice(0, 10) + ".csv";
+  a.download = "Production-25-26 " + new Date().toISOString().slice(0, 10) + ".csv";
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -650,9 +568,9 @@ function importCsv(text){
     const g = (f) => idx[f] === -1 ? "" : (r[idx[f]] || "").trim();
     if (!g("name")) continue;
     imported.push({
-      name: g("name"), rep: g("rep"), claim: g("claim"), po: g("po"), date: g("date"),
+      name: g("name"), rep: g("rep"), accu_po: g("accu_po"), top_po: g("top_po"), date: g("date"),
       acv: money(g("acv")), dep: money(g("dep")), mats: money(g("mats")), labor: money(g("labor")),
-      notes: g("notes"), installed: g("installed").toUpperCase() === "TRUE" || g("installed").toUpperCase() === "YES",
+      cb: g("cb"), installed: g("installed").toUpperCase() === "TRUE" || g("installed").toUpperCase() === "YES",
       pif: g("pif").toUpperCase() === "TRUE",
     });
   }
@@ -703,8 +621,8 @@ $id("tab-active").addEventListener("click", () => { view = "active"; renderTable
 $id("tab-pif").addEventListener("click", () => { view = "pif"; renderTable(); });
 $id("addrow").addEventListener("click", () => {
   view = "active";   // new customers land on the Active tab
-  rows.unshift({ name: "", rep: "", claim: "", po: "", date: "",
-                 acv: null, dep: null, mats: null, labor: null, notes: "", installed: false, pif: false });
+  rows.unshift({ name: "", rep: "", accu_po: "", top_po: "", date: "",
+                 acv: null, dep: null, mats: null, labor: null, cb: "", installed: false, pif: false });
   save(); renderTable(); renderSummary();
   const first = document.querySelector('#tbody input[data-f="name"]');
   if (first) first.focus();
@@ -716,19 +634,25 @@ $id("importcsv").addEventListener("change", (e) => {
   f.text().then(importCsv);
   e.target.value = "";
 });
-$id("clearall").addEventListener("click", () => {
-  if (!confirm("Delete ALL rows from the sheet? Export CSV first if unsure. (Assumptions, payables, and goals stay.)")) return;
-  rows = [];
+$id("resetsnap").addEventListener("click", () => {
+  if (!confirm("Throw away every edit made in the app and reload the original sheet snapshot?")) return;
   localStorage.removeItem(STORE);
-  renderTable(); renderSummary();
+  load(true);
 });
 
-function load(){
-  const saved = localStorage.getItem(STORE);
-  if (saved) { try { rows = JSON.parse(saved) || []; } catch (_) { rows = []; } }
-  renderTable(); renderSummary();
+function load(fromSnap){
+  const saved = fromSnap ? null : localStorage.getItem(STORE);
+  if (saved) {
+    try { rows = JSON.parse(saved) || []; } catch (_) { rows = []; }
+    renderTable(); renderSummary();
+    return;
+  }
+  fetch("production.json").then((r) => r.json()).then((snap) => {
+    rows = snap || [];
+    save();
+    renderTable(); renderSummary();
+  });
 }
-load();
-try { if (sessionStorage.getItem(SS_KEY) === "1") unlock(); } catch (e) {}
+load(false);
 </script>
 </body></html>

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "provider": "gaf_quickmeasure",
+    "parser": "report_parser",
+    "report_date": "April 23, 2025",
+    "address": "1420 Maple Ave, Kansas City, MO 64111",
+    "confidence": 1.0
+  },
+  "totals": {
+    "roof_area_sqft": 6445.0,
+    "squares": 64.45,
+    "facets": 36,
+    "predominant_pitch": "8/12",
+    "predominant_pitch_ratio": 0.6667
+  },
+  "pitch_breakdown": [
+    {
+      "pitch": "4/12",
+      "area_sqft": 258.0,
+      "percent": 4.0
+    },
+    {
+      "pitch": "6/12",
+      "area_sqft": 179.0,
+      "percent": 3.0
+    },
+    {
+      "pitch": "8/12",
+      "area_sqft": 4683.0,
+      "percent": 73.0
+    },
+    {
+      "pitch": "16/12",
+      "area_sqft": 1325.0,
+      "percent": 21.0
+    }
+  ],
+  "lengths_ft": {
+    "ridges": 88.0,
+    "hips": 468.0,
+    "valleys": 292.0,
+    "rakes": 105.0,
+    "eaves": 425.0,
+    "bends": 24.0,
+    "flashing": 74.0,
+    "step_flashing": 115.0,
+    "drip_edge": 530.0,
+    "ridge_cap": 556.0,
+    "starter": 530.0,
+    "leak_barrier": 1504.0
+  },
+  "penetrations": {
+    "count": 1,
+    "area_sqft": 246.0,
+    "perimeter_ft": 63.0
+  },
+  "waste_table": [
+    {
+      "waste_pct": 0.0,
+      "area_sqft": 6445.0,
+      "squares": 65.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 15.0,
+      "area_sqft": 7412.0,
+      "squares": 75.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 18.0,
+      "area_sqft": 7605.0,
+      "squares": 77.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 20.0,
+      "area_sqft": 7734.0,
+      "squares": 78.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 22.0,
+      "area_sqft": 7863.0,
+      "squares": 79.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 25.0,
+      "area_sqft": 8057.0,
+      "squares": 81.0,
+      "suggested": false
+    },
+    {
+      "waste_pct": 30.0,
+      "area_sqft": 8379.0,
+      "squares": 84.0,
+      "suggested": false
+    }
+  ],
+  "suggested_waste_pct": 18,
+  "facet_geometry": [],
+  "warnings": [],
+  "raw": {}
+}

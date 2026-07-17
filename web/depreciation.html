@@ -1,0 +1,398 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista Depreciation Request — Measure2Estimate</title>
+<link rel="icon" href="logo.png">
+<script src="pdf.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="supplements.js"></script>
+<style>
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
+  .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
+  .tabs a{padding:9px 18px;background:#f7f8f9;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;
+    font-weight:700;font-size:13px;color:var(--grey);text-decoration:none}
+  .tabs a:hover{color:var(--ink)}
+  .tabs a.on{background:#fff;color:var(--ink);border-top:3px solid var(--red);padding-top:7px;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+  .tabs a span{font-weight:400;color:var(--grey);font-size:11px;margin-left:6px}
+  .wrap{display:flex;gap:18px;max-width:1340px;margin:0 auto 18px;padding:0 14px;align-items:flex-start}
+  @media (max-width:980px){.wrap{flex-direction:column}.panel{width:100%!important}}
+  .panel{width:400px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
+  .panel h2{font-size:14px;margin:26px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
+  .panel h2:first-of-type{margin-top:22px}
+  .brand{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  .brand img{width:52px;height:auto}
+  .apptitle b{font-size:16px;letter-spacing:.01em}
+  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
+  .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
+  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed .dropbig{color:var(--red)}
+  .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
+  .drop input{display:none}
+  .privacy{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+  .status{margin-top:8px;font-size:12px}
+  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
+  label.fld{display:block;font-size:11px;color:var(--grey);margin-top:10px}
+  input[type=text],input[type=number],input[type=date],select{width:100%;padding:6px 7px;border:1px solid var(--line);border-radius:4px;font:inherit}
+  input[type=number]{text-align:right}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px}
+  .chk input{width:16px;height:16px;accent-color:var(--red)}
+  .addrow{display:flex;gap:6px;margin-top:8px}
+  .addrow input{flex:1}
+  .addrow button{border:1px dashed var(--line);background:#fff;border-radius:4px;padding:0 10px;color:var(--grey);cursor:pointer;font:inherit}
+  .actions{margin-top:22px;display:flex;gap:8px}
+  .actions button{flex:1;padding:10px;border:0;border-radius:5px;font:700 13px Arial;cursor:pointer}
+  .go{background:var(--red);color:#fff}
+  .alt{background:var(--bar);color:var(--ink)}
+  /* preview letter */
+  .page{flex:1;min-width:0;background:#fff;padding:40px 48px 52px;box-shadow:0 2px 10px rgba(0,0,0,.08);font-size:12.5px;line-height:1.6}
+  .page .head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid var(--bar);padding-bottom:14px}
+  .page .co b{font-size:14px}
+  .page .co{font-size:11.5px;color:#2a2a2a;line-height:1.45}
+  .page h1{font-size:19px;margin:0;text-align:right}
+  .page .date{color:var(--grey);text-align:right;font-size:12px;margin-top:4px}
+  .blk{margin-top:18px}
+  .blk .lab{color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .recon{width:100%;border-collapse:collapse;margin-top:14px}
+  .recon td{padding:6px 4px;border-bottom:1px solid var(--bar)}
+  .recon .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .recon .due td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;font-size:15px;padding-top:10px}
+  ul.work{margin:10px 0 0;padding-left:18px}
+  ul.work li{margin:2px 0}
+  .empty{color:var(--grey);text-align:center;padding:70px 0}
+  .sig{display:flex;gap:30px;margin-top:44px}
+  .sig .l{flex:2;border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:#2a2a2a}
+  .sig .d{flex:1;border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:#2a2a2a}
+  .note{font-size:11px;color:var(--grey);line-height:1.5;margin-top:10px;background:#fbfbfc;border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+</style></head><body><script src="gate.js"></script>
+<div class="tabs">
+  <a href="index.html">Estimate Creator <span>m2e</span></a>
+  <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
+  <a class="on" href="depreciation.html">Depreciation Request <span>m2dr</span></a>
+  <a href="customers.html">Production <span>AR</span></a>
+</div>
+<div class="wrap">
+
+  <!-- ======================= controls ======================= -->
+  <div class="panel">
+    <div class="brand">
+      <img src="logo.png" alt="Vista Exterior Construction" id="logoimg">
+      <div class="apptitle"><b>Depreciation Request</b>
+        <span>Work complete → release the held-back funds</span></div>
+    </div>
+
+    <h2>1 · Damage report</h2>
+    <label class="drop" id="drdrop">
+      <input type="file" id="drfile" accept="application/pdf">
+      <div class="dropbig">Drop the insurance DR / scope PDF</div>
+      <div class="dropsub">we'll read the claim &amp; dollar figures if we can</div>
+    </label>
+    <div class="status" id="drstatus"></div>
+    <div class="privacy">Read entirely in your browser — the file never leaves this device.</div>
+
+    <h2>2 · Claim &amp; property</h2>
+    <label class="fld">Insured (homeowner) name</label><input type="text" id="f_insured">
+    <label class="fld">Property address</label><input type="text" id="f_address">
+    <div class="g2">
+      <div><label class="fld">Carrier</label><input type="text" id="f_carrier"></div>
+      <div><label class="fld">Claim #</label><input type="text" id="f_claim"></div>
+      <div><label class="fld">Policy #</label><input type="text" id="f_policy"></div>
+      <div><label class="fld">Date of loss</label><input type="text" id="f_dol" placeholder="mm/dd/yyyy"></div>
+    </div>
+
+    <h2>3 · Money</h2>
+    <div class="g2">
+      <div><label class="fld">Total RCV ($)</label><input type="number" id="f_rcv"></div>
+      <div><label class="fld">ACV (insurer figure) ($)</label><input type="number" id="f_acv"></div>
+      <div><label class="fld">Recoverable dep. ($)</label><input type="number" id="f_dep"></div>
+      <div><label class="fld">Deductible ($)</label><input type="number" id="f_deduct"></div>
+      <div><label class="fld">Approved supplements ($)</label><input type="number" id="f_supp"></div>
+    </div>
+    <div class="note" style="margin-top:8px">All four DR figures (RCV, ACV,
+      recoverable depreciation, deductible) print on the invoice. The invoice
+      bills the <b>full job</b>; the carrier is asked to release only the
+      recoverable depreciation (plus approved supplements).</div>
+
+    <h2>4 · Work completed</h2>
+    <label class="fld">Date work completed</label><input type="date" id="f_done">
+    <div id="worklist">
+      <label class="chk"><input type="checkbox" checked data-w="Full roof replacement per scope"> Full roof replacement per scope</label>
+      <label class="chk"><input type="checkbox" data-w="Gutters / downspouts"> Gutters / downspouts</label>
+      <label class="chk"><input type="checkbox" data-w="Detach &amp; reset items"> Detach &amp; reset items</label>
+      <label class="chk"><input type="checkbox" data-w="Code upgrades (drip edge, ice &amp; water, flashing)"> Code upgrades (drip edge, ice &amp; water, flashing)</label>
+    </div>
+    <div class="addrow">
+      <input type="text" id="f_addwork" placeholder="Add another completed item…">
+      <button id="addwork">Add</button>
+    </div>
+
+    <div class="actions">
+      <button class="go" id="build">Preview request</button>
+      <button class="alt" id="download">Download PDF</button>
+    </div>
+    <div class="note">Generates a depreciation-release request, a certificate of
+      completion, and the RCV/ACV reconciliation. Only confirm work that was
+      actually completed — this is a legal statement to the carrier.</div>
+  </div>
+
+  <!-- ======================= preview ======================= -->
+  <div class="page" id="page"><div class="empty">Fill in the claim details and press <b>Preview request</b> to build the full-job invoice + depreciation-release request.</div></div>
+</div>
+
+<script>
+"use strict";
+const sup = window.supplements;
+const $ = (id) => document.getElementById(id);
+const money = (x) => "$" + (x || 0).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const COMPANY = { name: "Vista Exterior Construction",
+  address: [], phone: "" };
+function today() { const d = new Date();
+  return String(d.getMonth()+1).padStart(2,"0")+"/"+String(d.getDate()).padStart(2,"0")+"/"+d.getFullYear(); }
+function fmtDate(v) { if (!v) return today(); const p = v.split("-"); return p.length === 3 ? p[1]+"/"+p[2]+"/"+p[0] : v; }
+
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+
+async function extractText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const lines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const toks = tc.items.filter((it) => it.str && it.str.trim())
+      .map((it) => ({str: it.str.trim(), x: it.transform[4], y: it.transform[5]}));
+    const rows = [];
+    for (const t of toks) {
+      let ln = rows.find((l) => Math.abs(l.y - t.y) < 2.5);
+      if (!ln) { ln = {y: t.y, toks: []}; rows.push(ln); }
+      ln.toks.push(t);
+    }
+    rows.sort((a, b) => b.y - a.y);
+    for (const ln of rows) { ln.toks.sort((a, b) => a.x - b.x); lines.push(ln.toks.map((t) => t.str).join(" ")); }
+  }
+  return lines.join("\n");
+}
+
+async function handleDR(file) {
+  const st = $("drstatus"); st.className = "status"; st.textContent = "Reading " + file.name + " …";
+  try {
+    const info = sup.parseCarrierText(await extractText(file));
+    const set = (id, v) => { if (v != null && v !== "" && !$(id).value) $(id).value = v; };
+    set("f_carrier", info.carrier); set("f_claim", info.claim_no); set("f_policy", info.policy_no);
+    set("f_dol", info.date_of_loss); set("f_rcv", info.rcv_total); set("f_acv", info.acv_total);
+    set("f_dep", info.recoverable_dep); set("f_deduct", info.deductible);
+    if (info.has_text) {
+      const got = [info.claim_no && "claim #", info.rcv_total != null && "RCV", info.recoverable_dep != null && "recoverable dep."].filter(Boolean);
+      st.className = "status ok";
+      st.textContent = got.length ? "Read " + got.join(", ") + " — confirm the figures." : "Loaded — enter the figures manually.";
+    } else {
+      st.className = "status err";
+      st.textContent = "Scanned/photo document — type the figures by hand (nothing guessed).";
+    }
+    if (info.warnings.length) st.textContent += "  ⚠ " + info.warnings[0];
+  } catch (e) { st.className = "status err"; st.textContent = "Could not read: " + e.message; }
+}
+
+function completedWork() {
+  return Array.from($("worklist").querySelectorAll("input[type=checkbox]"))
+    .filter((c) => c.checked).map((c) => c.getAttribute("data-w"));
+}
+function figures() {
+  const g = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+  const rcv = g("f_rcv"), acv = g("f_acv"), supp = g("f_supp"), deductible = g("f_deduct");
+  // Recoverable depreciation drives the request — use the figure from the DR;
+  // only fall back to (RCV - ACV) when it wasn't provided (assumes all
+  // depreciation is recoverable, which isn't always true — hence the field).
+  const dep = Number.isFinite(parseFloat($("f_dep").value)) ? parseFloat($("f_dep").value) : sup.round2(rcv - acv);
+  // Full-job invoice: bill RCV + approved supplements, credit the insurance
+  // check already received (ACV net of deductible), balance is what remains.
+  const firstPayment = sup.round2(Math.max(0, acv - deductible));  // insurance check already sent
+  const invoiceTotal = sup.round2(rcv + supp);                     // full job price
+  const balanceDue = sup.round2(invoiceTotal - firstPayment);      // total still owed
+  const carrierRelease = sup.depreciationDue(dep, supp);           // recoverable dep + supplements
+  const nonRecoverableDep = sup.round2(Math.max(0, rcv - acv - dep));
+  const homeownerDue = sup.round2(deductible + nonRecoverableDep); // deductible + non-recoverable dep
+  return { rcv, acv, dep, supp, deductible, firstPayment, invoiceTotal,
+           balanceDue, carrierRelease, nonRecoverableDep, homeownerDue };
+}
+
+function build() {
+  const f = figures();
+  const insured = $("f_insured").value.trim() || "—";
+  const addr = $("f_address").value.trim() || "—";
+  const carrier = $("f_carrier").value.trim() || "—";
+  const claim = $("f_claim").value.trim() || "—";
+  const policy = $("f_policy").value.trim();
+  const dol = $("f_dol").value.trim();
+  const done = fmtDate($("f_done").value);
+  const work = completedWork();
+
+  const relLine = 'recoverable depreciation of <b>' + money(f.dep) + '</b>' +
+    (f.supp > 0 ? ' plus approved supplements of <b>' + money(f.supp) + '</b> (total <b>' + money(f.carrierRelease) + '</b>)' : '');
+
+  $("page").innerHTML =
+    '<div class="head">' +
+      '<div class="co"><b>' + COMPANY.name + '</b><br>' + COMPANY.address.join("<br>") + '<br>Phone: ' + COMPANY.phone + '</div>' +
+      '<div><h1>Final Invoice</h1><div class="date">' + today() + '</div></div>' +
+    '</div>' +
+
+    '<div class="blk"><span class="lab">Bill to</span><br><b>' + carrier + '</b> — Claims Department' +
+      (insured !== "—" ? '  ·  Insured: <b>' + insured + '</b>' : '') + '</div>' +
+    '<div class="blk"><span class="lab">Re</span><br>' +
+      'Claim #: <b>' + claim + '</b>' + (policy ? ' &nbsp; Policy #: <b>' + policy + '</b>' : '') +
+      (dol ? ' &nbsp; Date of loss: <b>' + dol + '</b>' : '') + '<br>' +
+      'Property: <b>' + addr + '</b></div>' +
+
+    '<div class="blk">To Whom It May Concern:</div>' +
+    '<div class="blk">All approved scope of work on the above claim was <b>completed</b> as of <b>' + done + '</b>. ' +
+      'Enclosed is our <b>final invoice for the full job</b>. We respectfully request release of the ' +
+      relLine + ' withheld from the initial payment.</div>' +
+
+    '<div class="blk"><span class="lab">Work completed</span>' +
+      '<ul class="work">' + (work.length ? work.map((w) => '<li>' + w + '</li>').join("") : '<li>—</li>') + '</ul></div>' +
+
+    '<table class="recon">' +
+      '<tr><td>Completed work per approved insurance scope (RCV)</td><td class="num">' + money(f.rcv) + '</td></tr>' +
+      (f.supp > 0 ? '<tr><td>Approved supplements</td><td class="num">' + money(f.supp) + '</td></tr>' : '') +
+      '<tr><td><b>Invoice total (full job)</b></td><td class="num"><b>' + money(f.invoiceTotal) + '</b></td></tr>' +
+      '<tr><td>Less: insurance payment received' +
+        (f.deductible > 0 ? ' (ACV ' + money(f.acv) + ' − deductible ' + money(f.deductible) + ')' : '') +
+        '</td><td class="num">(' + money(f.firstPayment) + ')</td></tr>' +
+      '<tr class="due"><td>Balance due</td><td class="num">' + money(f.balanceDue) + '</td></tr>' +
+    '</table>' +
+
+    '<div class="blk"><span class="lab">Balance due consists of</span>' +
+      '<table class="recon" style="margin-top:6px">' +
+        '<tr><td>Recoverable depreciation — release requested from carrier</td><td class="num">' + money(f.dep) + '</td></tr>' +
+        (f.supp > 0 ? '<tr><td>Approved supplements — from carrier</td><td class="num">' + money(f.supp) + '</td></tr>' : '') +
+        (f.deductible > 0 ? '<tr><td>Policy deductible — homeowner responsibility</td><td class="num">' + money(f.deductible) + '</td></tr>' : '') +
+        (f.nonRecoverableDep > 0 ? '<tr><td>Non-recoverable depreciation — homeowner responsibility</td><td class="num">' + money(f.nonRecoverableDep) + '</td></tr>' : '') +
+      '</table></div>' +
+
+    '<div class="blk">A certificate of completion and supporting documentation are enclosed. ' +
+      'Please remit the recoverable depreciation' + (f.supp > 0 ? ' and approved supplements' : '') + ', or contact us with any questions.</div>' +
+    '<div class="blk">Respectfully,<br><br>' + COMPANY.name + '</div>' +
+
+    '<div class="blk" style="margin-top:34px;border-top:2px solid var(--bar);padding-top:16px">' +
+      '<span class="lab">Certificate of Completion</span><br>' +
+      'I certify that the work described above was completed in a workmanlike manner on ' + done + '.' +
+      '<div class="sig"><div class="l">Contractor signature</div><div class="d">Date</div></div>' +
+      '<div class="sig" style="margin-top:6px"><div class="l">Homeowner acknowledgement</div><div class="d">Date</div></div>' +
+    '</div>';
+}
+
+function downloadPdf() {
+  const f = figures();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit: "pt", format: "letter"});
+  const W = 612, MX = 54, grey = [129, 136, 142];
+  let y = 54;
+  const need = (h) => { if (y + h > 742) { doc.addPage(); y = 54; } };
+  const insured = $("f_insured").value.trim() || "—";
+  const addr = $("f_address").value.trim() || "—";
+  const carrier = $("f_carrier").value.trim() || "—";
+  const claim = $("f_claim").value.trim() || "—";
+  const policy = $("f_policy").value.trim();
+  const dol = $("f_dol").value.trim();
+  const done = fmtDate($("f_done").value);
+  const work = completedWork();
+
+  const img = $("logoimg");
+  try { doc.addImage(img, "PNG", MX, y, 48, 48 * (img.naturalHeight / img.naturalWidth)); } catch (e) {}
+  doc.setFont("helvetica", "bold").setFontSize(11).text(COMPANY.name, MX + 60, y + 10);
+  doc.setFont("helvetica", "normal").setFontSize(9).setTextColor(...grey);
+  doc.text(COMPANY.address.join("   ") + "   " + COMPANY.phone, MX + 60, y + 24);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold").setFontSize(16).text("FINAL INVOICE", W - MX, y + 8, {align: "right"});
+  doc.setFont("helvetica", "normal").setFontSize(10).setTextColor(...grey).text(today(), W - MX, y + 24, {align: "right"});
+  doc.setTextColor(0, 0, 0);
+  y += 58; doc.setDrawColor(217, 220, 224).line(MX, y, W - MX, y); y += 22;
+
+  const line = (s, bold) => { doc.setFont("helvetica", bold ? "bold" : "normal").setFontSize(10);
+    doc.splitTextToSize(s, W - MX * 2).forEach((ln) => { need(15); doc.text(ln, MX, y); y += 15; }); };
+
+  line("Bill to:  " + carrier + " — Claims Department", true);
+  line("Claim #: " + claim + (policy ? "     Policy #: " + policy : "") + (dol ? "     Date of loss: " + dol : ""));
+  line("Insured: " + insured);
+  line("Property: " + addr);
+  y += 8;
+  line("To Whom It May Concern:");
+  y += 4;
+  line("All approved scope of work on the above claim was completed as of " + done + ". Enclosed is our final "
+     + "invoice for the full job. We respectfully request release of the recoverable depreciation of " + money(f.dep)
+     + (f.supp > 0 ? " plus approved supplements of " + money(f.supp) + " (total " + money(f.carrierRelease) + ")" : "")
+     + " withheld from the initial payment.");
+  y += 10;
+  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...grey);
+  need(14); doc.text("WORK COMPLETED", MX, y); y += 14; doc.setTextColor(0, 0, 0);
+  (work.length ? work : ["—"]).forEach((w) => { need(14); doc.setFont("helvetica","normal").setFontSize(10).text("•  " + w.replace(/&amp;/g,"&"), MX + 8, y); y += 14; });
+  y += 10;
+
+  const cLab = MX, cVal = W - MX;
+  const row = (l, v, bold) => { need(16); doc.setFont("helvetica", bold ? "bold" : "normal").setFontSize(10);
+    doc.text(l, cLab, y); doc.text(v, cVal, y, {align: "right"}); y += 16;
+    doc.setDrawColor(239, 240, 242).line(MX, y - 5, W - MX, y - 5); };
+
+  // invoice
+  row("Completed work per approved insurance scope (RCV)", money(f.rcv));
+  if (f.supp > 0) row("Approved supplements", money(f.supp));
+  row("Invoice total (full job)", money(f.invoiceTotal), true);
+  row("Less: insurance payment received"
+    + (f.deductible > 0 ? " (ACV " + money(f.acv) + " - deductible " + money(f.deductible) + ")" : ""),
+    "(" + money(f.firstPayment) + ")");
+  need(24);
+  doc.setDrawColor(0,0,0).setLineWidth(1).line(MX, y, W - MX, y); doc.setLineWidth(0.2); y += 16;
+  doc.setFont("helvetica", "bold").setFontSize(12);
+  doc.text("Balance due", cLab, y); doc.text(money(f.balanceDue), cVal, y, {align: "right"});
+  doc.setFont("helvetica", "normal"); y += 24;
+
+  // balance-due breakdown
+  doc.setFont("helvetica", "bold").setFontSize(9).setTextColor(...grey);
+  need(14); doc.text("BALANCE DUE CONSISTS OF", MX, y); y += 14; doc.setTextColor(0, 0, 0);
+  row("Recoverable depreciation - release requested from carrier", money(f.dep));
+  if (f.supp > 0) row("Approved supplements - from carrier", money(f.supp));
+  if (f.deductible > 0) row("Policy deductible - homeowner responsibility", money(f.deductible));
+  if (f.nonRecoverableDep > 0) row("Non-recoverable depreciation - homeowner responsibility", money(f.nonRecoverableDep));
+  y += 12;
+
+  line("A certificate of completion and supporting documentation are enclosed. Please remit the recoverable depreciation"
+     + (f.supp > 0 ? " and approved supplements" : "") + ", or contact us with any questions.");
+  y += 6; line("Respectfully,"); y += 4; line(COMPANY.name, true);
+
+  // certificate of completion
+  need(120);
+  y += 14; doc.setDrawColor(217,220,224).line(MX, y, W - MX, y); y += 20;
+  doc.setFont("helvetica","bold").setFontSize(12).text("Certificate of Completion", MX, y); y += 18;
+  doc.setFont("helvetica","normal").setFontSize(10);
+  doc.splitTextToSize("I certify that the work described above was completed in a workmanlike manner on " + done + ".", W - MX * 2)
+    .forEach((ln) => { doc.text(ln, MX, y); y += 15; });
+  y += 34;
+  const half = (W - MX * 2 - 30) / 2;
+  doc.setDrawColor(0,0,0);
+  doc.line(MX, y, MX + half, y); doc.line(MX + half + 30, y, W - MX, y); y += 12;
+  doc.setFontSize(8.5).setTextColor(...grey);
+  doc.text("Contractor signature / date", MX, y); doc.text("Homeowner acknowledgement / date", MX + half + 30, y);
+  doc.setTextColor(0, 0, 0);
+
+  const fn = ("Final Invoice - Depreciation Request " + (claim !== "—" ? claim : insured)).replace(/[\\/:*?"<>|&]/g, "").trim();
+  doc.save((fn || "Final Invoice") + ".pdf");
+}
+
+// wiring
+$("drfile").addEventListener("change", (e) => e.target.files[0] && handleDR(e.target.files[0]));
+const drop = $("drdrop");
+["dragover","dragenter"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("armed"); }));
+["dragleave","drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("armed"); }));
+drop.addEventListener("drop", (e) => e.dataTransfer.files[0] && handleDR(e.dataTransfer.files[0]));
+$("addwork").addEventListener("click", () => {
+  const v = $("f_addwork").value.trim(); if (!v) return;
+  const lab = document.createElement("label"); lab.className = "chk";
+  lab.innerHTML = '<input type="checkbox" checked data-w="' + v.replace(/"/g,"&quot;") + '"> ' + v;
+  $("worklist").appendChild(lab); $("f_addwork").value = "";
+});
+$("build").addEventListener("click", build);
+$("download").addEventListener("click", downloadPdf);
+</script>
+</body></html>

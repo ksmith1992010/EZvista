@@ -1,2 +1,3 @@
+# Static field tool lives in web/ — no build step, pure client-side.
 [build]
-  publish = "."
+  publish = "web"
