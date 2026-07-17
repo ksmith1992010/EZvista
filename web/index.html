@@ -3,10 +3,12 @@
 <title>Vista Field Estimator — Measure2Estimate</title>
 <link rel="icon" href="logo.png">
 <script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script><!-- preloaded: parse works even if runtime fetch is blocked (password wall / flaky jobsite network) -->
 <script src="jspdf.umd.min.js"></script>
 <script src="roofparse.js"></script>
+<script src="ocr.js"></script>
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173;--accent:#2e4b44}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   /* ---- site tabs ---- */
@@ -27,7 +29,7 @@
   .apptitle b{font-size:16px;letter-spacing:.01em}
   .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
   .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
-  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed{border-color:var(--salmon);background:#f3f7f1}
   .drop.armed .dropbig{color:var(--red)}
   .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
   .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
@@ -57,7 +59,7 @@
   .marginval b{font-size:14px}
   /* upgrade cards */
   .upg{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-top:8px}
-  .upg.on{border-color:var(--salmon);background:#fff8f7}
+  .upg.on{border-color:var(--salmon);background:#f3f7f1}
   .upg .head2{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12.5px}
   .upg .price{margin-left:auto;color:var(--red);white-space:nowrap}
   .upg .sell{font-size:11px;color:var(--grey);margin:4px 0 0 24px;line-height:1.45}
@@ -136,7 +138,7 @@
   <a class="on" href="index.html">Estimate Creator <span>m2e</span></a>
   <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
   <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
-  <a href="customers.html">Production <span>AR</span></a>
+  <a href="customers.html">Production <span>AR/AP</span></a>
 </div>
 <div class="wrap">
 
@@ -150,8 +152,8 @@
 
     <h2>1 · Measurement</h2>
     <label class="drop" id="drop">
-      <input type="file" id="file" accept="application/pdf">
-      <div class="dropbig">Drop a GAF QuickMeasure or insurance scope PDF</div>
+      <input type="file" id="file" accept="application/pdf,image/*">
+      <div class="dropbig">Drop a GAF QuickMeasure or insurance scope — PDF or photo</div>
       <div class="dropsub">or tap to choose a file</div>
     </label>
     <div class="privacy">Parsed entirely in your browser — the PDF never leaves this device.</div>
@@ -355,7 +357,23 @@ async function handleFile(file) {
   const st = $("status");
   st.className = "status"; st.textContent = "Parsing " + file.name + " …";
   try {
-    const {text, suggested} = await extractPdf(file);
+    let text, suggested = null;
+    if ((file.type || "").startsWith("image/")) {
+      // Photo of a scope / measurement — OCR it (first photo pulls the
+      // vendored reader + model, ~7 MB, then it's cached for the session).
+      st.textContent = "Reading photo " + file.name + " … (first photo takes a moment)";
+      text = await m2eOcr.ocrImage(file);
+    } else {
+      ({text, suggested} = await extractPdf(file));
+      if ((text || "").replace(/\s/g, "").length < 40) {
+        // No text layer — a scanned/photographed PDF. OCR the page images.
+        st.textContent = "No text layer in " + file.name + " — OCR-reading scanned pages …";
+        text = await m2eOcr.ocrPdf(file, (p, n) => {
+          st.textContent = "OCR-reading scanned page " + p + " of " + n + " …";
+        });
+        suggested = null;
+      }
+    }
     // Try the GAF QuickMeasure parser first; if it finds no roof area and
     // the text reads like a carrier estimate, fall back to the insurance
     // scope parser (Xactimate DR layout).

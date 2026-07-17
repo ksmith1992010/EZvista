@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Production — AR &amp; Income — Measure2Estimate</title>
+<title>Production — AR/AP &amp; Income — Measure2Estimate</title>
 <link rel="icon" href="logo.png">
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   .tabs{display:flex;gap:6px;max-width:1500px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
@@ -21,7 +21,7 @@
     color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
   .btn:hover{border-color:var(--salmon);color:var(--red)}
   .btn.primary{background:var(--red);border-color:var(--red);color:#fff}
-  .btn.primary:hover{background:#e02023;color:#fff}
+  .btn.primary:hover{background:#24403a;color:#fff}
   .tblwrap{overflow-x:auto;border:1px solid var(--line)}
   table{border-collapse:collapse;width:100%;min-width:1240px;font-size:12px}
   th,td{border-bottom:1px solid #eef1f4;border-right:1px solid #f3f5f7;padding:2px 4px;white-space:nowrap}
@@ -40,7 +40,6 @@
   .jobcell{font-weight:700}
   .rowx{border:0;background:none;color:var(--grey);cursor:pointer;font-size:14px;padding:0 6px}
   .rowx:hover{color:var(--red)}
-  .estgo{color:var(--red);font-weight:700;text-decoration:none;font-size:11px}
   tfoot td{background:var(--bar);font-weight:700;border-top:2px solid var(--ink);padding:6px}
   .below{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
   .savenote{font-size:11px;color:var(--grey)}
@@ -83,7 +82,7 @@
   <a href="index.html">Estimate Creator <span>m2e</span></a>
   <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
   <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
-  <a class="on" href="customers.html">Production <span>AR</span></a>
+  <a class="on" href="customers.html">Production <span>AR/AP</span></a>
 </div>
 <div class="wrap">
   <div class="head">
@@ -105,8 +104,8 @@
         <th style="width:76px" data-sort="accu_po">ACCU PO</th><th style="width:76px" data-sort="top_po">TOP PO</th><th style="width:64px" data-sort="date">Date</th>
         <th class="num" style="width:96px" data-sort="acv">ACV</th><th class="num" style="width:96px" data-sort="dep">Dep.</th>
         <th class="num" style="width:96px" data-sort="mats">Mats</th><th class="num" style="width:96px" data-sort="labor">Labor</th>
-        <th style="min-width:130px" data-sort="cb">CB / Notes</th><th style="width:40px" data-sort="installed">Inst.</th><th style="width:36px" data-sort="pif">PIF</th>
-        <th class="num" style="width:104px" data-sort="job">Job $ (ACV+Dep)</th><th style="width:64px"></th>
+        <th style="min-width:130px" data-sort="cb">CB / Notes</th><th style="width:44px" data-sort="ordered">Ord.</th><th style="width:40px" data-sort="installed">Inst.</th><th style="width:36px" data-sort="pif">PIF</th>
+        <th class="num" style="width:104px" data-sort="job">Job $ (ACV+Dep)</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
       <tfoot><tr id="totviewrow"></tr><tr id="totrow"></tr></tfoot>
@@ -244,26 +243,6 @@ function save(){
   saveT = setTimeout(() => { n.textContent = "edits save automatically on this device"; n.classList.remove("saved"); }, 2500);
 }
 
-function splitName(name){
-  if (name.includes(",")) { const [l, f] = name.split(",", 2).map((s) => s.trim()); return [f || "", l]; }
-  const p = name.trim().split(/\s+/);
-  return p.length === 2 ? [p[0], p[1]] : ["", name.trim()];
-}
-function estHref(r){
-  const [first, last] = splitName(r.name || "");
-  const params = new URLSearchParams();
-  if (first) params.set("first", first);
-  if (last) params.set("last", last);
-  const po = r.top_po || r.accu_po;
-  if (po) params.set("po", po);
-  return "index.html?" + params.toString();
-}
-function topHref(r){
-  // Deep-link straight to the customer card: T.O.P. resolves #find= by TOP
-  // PO first, then name. Plain homepage when the row has neither.
-  const q = (r.top_po || "").trim() || (r.name || "").trim();
-  return "https://t-o-p.netlify.app/" + (q ? "#find=" + encodeURIComponent(q) : "");
-}
 function rowClass(r){
   const job = (r.acv || 0) + (r.dep || 0);
   return r.pif ? "pif" : (r.installed && job > 0 ? "ar" : "");
@@ -296,13 +275,11 @@ function renderTable(){
         '" data-f="' + f + '" value="' + (v == null ? "" : v) + '"></td>';
     });
     h += '<td><input type="text" data-i="' + i + '" data-f="cb" value="' + escAttr(r.cb || "") + '"></td>';
+    h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="ordered"' + (r.ordered ? " checked" : "") + '></td>';
     h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="installed"' + (r.installed ? " checked" : "") + '></td>';
     h += '<td class="chk"><input type="checkbox" data-i="' + i + '" data-f="pif"' + (r.pif ? " checked" : "") + '></td>';
-    h += '<td class="num jobcell" id="job-' + i + '">' + (job ? fmt(job) : "") + '</td>';
-    h += '<td><a class="estgo" style="color:#3730a3" href="' + topHref(r) + '" id="top-' + i + '" target="_blank" rel="noopener" ' +
-         'title="Open this customer in T.O.P.">TOP ↗</a> ' +
-         '<a class="estgo" href="' + estHref(r) + '" id="est-' + i + '">EST →</a>' +
-         '<button class="rowx" title="Delete row" data-x="' + i + '">×</button></td>';
+    h += '<td class="num jobcell"><span id="job-' + i + '">' + (job ? fmt(job) : "") + '</span>' +
+         ' <button class="rowx" title="Delete row" data-x="' + i + '">×</button></td>';
     h += "</tr>";
     return h;
   }).join("");
@@ -335,8 +312,6 @@ function renderTable(){
       if (inp.type === "number") inp.classList.toggle("neg", rows[i][f] != null && rows[i][f] < 0);
       const job = (rows[i].acv || 0) + (rows[i].dep || 0);
       $id("job-" + i).textContent = job ? fmt(job) : "";
-      $id("est-" + i).href = estHref(rows[i]);
-      $id("top-" + i).href = topHref(rows[i]);
       inp.closest("tr").className = rowClass(rows[i]);
       save(); renderTotals(); renderSummary();
     });
@@ -383,12 +358,12 @@ function renderTotals(){
     (view === "pif" ? "PIF" : "ACTIVE") + " subtotal</td><td></td><td></td><td></td><td></td>" +
     '<td class="num" style="font-weight:400">' + fmt(v.acv) + '</td><td class="num" style="font-weight:400">' + fmt(v.dep) + "</td>" +
     '<td class="num" style="font-weight:400">' + fmt(v.mats) + '</td><td class="num" style="font-weight:400">' + fmt(v.labor) + "</td>" +
-    '<td></td><td></td><td></td><td class="num" style="font-weight:400">' + fmt(v.acv + v.dep) + "</td><td></td>";
+    '<td></td><td></td><td></td><td></td><td class="num" style="font-weight:400">' + fmt(v.acv + v.dep) + "</td>";
   const t = totals();
   $id("totrow").innerHTML = "<td>TOTALS (all jobs → equations)</td><td></td><td></td><td></td><td></td>" +
     '<td class="num">' + fmt(t.acv) + '</td><td class="num">' + fmt(t.dep) + "</td>" +
     '<td class="num">' + fmt(t.mats) + '</td><td class="num">' + fmt(t.labor) + "</td>" +
-    '<td></td><td></td><td></td><td class="num">' + fmt(t.acv + t.dep) + "</td><td></td>";
+    '<td></td><td></td><td></td><td></td><td class="num">' + fmt(t.acv + t.dep) + "</td>";
 }
 
 function weeksToNov1(){
@@ -519,7 +494,7 @@ $id("subs_labor_in").addEventListener("change", () => {
 });
 
 // ---- CSV export / import ------------------------------------------------
-const CSV_FIELDS = ["name","rep","accu_po","top_po","date","acv","dep","mats","labor","cb","installed","pif"];
+const CSV_FIELDS = ["name","rep","accu_po","top_po","date","acv","dep","mats","labor","cb","ordered","installed","pif"];
 function exportCsv(){
   const lines = [CSV_FIELDS.join(",")];
   rows.forEach((r) => {
@@ -570,7 +545,8 @@ function importCsv(text){
     imported.push({
       name: g("name"), rep: g("rep"), accu_po: g("accu_po"), top_po: g("top_po"), date: g("date"),
       acv: money(g("acv")), dep: money(g("dep")), mats: money(g("mats")), labor: money(g("labor")),
-      cb: g("cb"), installed: g("installed").toUpperCase() === "TRUE" || g("installed").toUpperCase() === "YES",
+      cb: g("cb"), ordered: g("ordered").toUpperCase() === "TRUE" || g("ordered").toUpperCase() === "YES",
+      installed: g("installed").toUpperCase() === "TRUE" || g("installed").toUpperCase() === "YES",
       pif: g("pif").toUpperCase() === "TRUE",
     });
   }
@@ -591,7 +567,7 @@ function dateKey(s){
 }
 function sortVal(r, f){
   if (f === "job") { const j = (r.acv || 0) + (r.dep || 0); return j || null; }
-  if (f === "installed" || f === "pif") return r[f] ? 1 : 0;
+  if (f === "ordered" || f === "installed" || f === "pif") return r[f] ? 1 : 0;
   if (["acv", "dep", "mats", "labor"].includes(f)) return r[f];
   if (f === "date") return dateKey(r.date);
   const s = String(r[f] || "").trim().toLowerCase();
@@ -622,7 +598,7 @@ $id("tab-pif").addEventListener("click", () => { view = "pif"; renderTable(); })
 $id("addrow").addEventListener("click", () => {
   view = "active";   // new customers land on the Active tab
   rows.unshift({ name: "", rep: "", accu_po: "", top_po: "", date: "",
-                 acv: null, dep: null, mats: null, labor: null, cb: "", installed: false, pif: false });
+                 acv: null, dep: null, mats: null, labor: null, cb: "", ordered: false, installed: false, pif: false });
   save(); renderTable(); renderSummary();
   const first = document.querySelector('#tbody input[data-f="name"]');
   if (first) first.focus();

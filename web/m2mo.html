@@ -3,10 +3,12 @@
 <title>Vista Material Order — m2mo</title>
 <link rel="icon" href="logo.png">
 <script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script><!-- preloaded: parse works even if runtime fetch is blocked (password wall / flaky jobsite network) -->
 <script src="jspdf.umd.min.js"></script>
 <script src="roofparse.js"></script>
+<script src="ocr.js"></script>
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   /* ---- site tabs ---- */
@@ -27,7 +29,7 @@
   .apptitle b{font-size:16px;letter-spacing:.01em}
   .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
   .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
-  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed{border-color:var(--salmon);background:#f3f7f1}
   .drop.armed .dropbig{color:var(--red)}
   .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
   .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
@@ -85,7 +87,7 @@
   table.items input{width:70px;padding:2px 4px;border:1px solid transparent;border-radius:3px;font:inherit;text-align:right;background:transparent}
   table.items input:hover,table.items input:focus{border-color:var(--line);background:#fbfbfc;outline:none}
   .badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;border-radius:3px;padding:1px 5px;vertical-align:1px}
-  .badge.auto{background:#ffe9e8;color:var(--red)}
+  .badge.auto{background:#e6efe2;color:var(--red)}
   .badge.scope{background:var(--bar);color:var(--grey)}
   .calc{font-size:10.5px;color:var(--grey);margin-top:2px}
   .totals{margin-top:14px;margin-left:auto;width:320px;font-size:12.5px}
@@ -99,7 +101,7 @@
   <a href="index.html">Estimate Creator <span>m2e</span></a>
   <a class="on" href="m2mo.html">Material Order Generator <span>m2mo</span></a>
   <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
-  <a href="customers.html">Production <span>AR</span></a>
+  <a href="customers.html">Production <span>AR/AP</span></a>
 </div>
 <div class="wrap">
 
@@ -113,8 +115,8 @@
 
     <h2>1 · Measurement</h2>
     <label class="drop" id="drop">
-      <input type="file" id="file" accept="application/pdf">
-      <div class="dropbig">Drop a GAF QuickMeasure PDF</div>
+      <input type="file" id="file" accept="application/pdf,image/*">
+      <div class="dropbig">Drop a GAF QuickMeasure or insurance scope — PDF or photo</div>
       <div class="dropsub">or tap to choose a file</div>
     </label>
     <div class="privacy">Parsed entirely in your browser — the PDF never leaves this device.</div>
@@ -297,14 +299,37 @@ async function handleFile(file) {
   const st = $("status");
   st.className = "status"; st.textContent = "Parsing " + file.name + " …";
   try {
-    const {text, suggested} = await extractPdf(file);
-    const rm = rp.parseText(text);
-    if (suggested !== null) {
+    let text, suggested = null;
+    if ((file.type || "").startsWith("image/")) {
+      // Photo of a scope / measurement — OCR it (first run pulls the vendored
+      // reader + model, ~7 MB, then it's cached for the session).
+      st.textContent = "Reading photo " + file.name + " … (first photo takes a moment)";
+      text = await m2eOcr.ocrImage(file);
+    } else {
+      ({text, suggested} = await extractPdf(file));
+      if ((text || "").replace(/\s/g, "").length < 40) {
+        // No text layer — a scanned/photographed PDF. OCR the page images.
+        st.textContent = "No text layer in " + file.name + " — OCR-reading scanned pages …";
+        text = await m2eOcr.ocrPdf(file, (p, n) => {
+          st.textContent = "OCR-reading scanned page " + p + " of " + n + " …";
+        });
+        suggested = null;
+      }
+    }
+    // GAF QuickMeasure first; fall back to the insurance-scope parser when
+    // the text reads like a carrier estimate (same routing as the estimator).
+    let rm = rp.parseText(text);
+    let kind = "GAF QuickMeasure";
+    if (!rm.totals.roof_area_sqft && rp.looksLikeScope(text)) {
+      rm = rp.parseScopeText(text);
+      kind = "insurance scope";
+    }
+    if (suggested !== null && kind === "GAF QuickMeasure") {
       rm.suggested_waste_pct = suggested;
       for (const row of rm.waste_table)
         if (Math.abs(row.waste_pct - suggested) < 0.01) row.suggested = true;
     }
-    loadMeasurement(rm, file.name);
+    loadMeasurement(rm, file.name + " (" + kind + ")");
   } catch (e) {
     st.className = "status err";
     st.textContent = "Could not parse: " + e.message;
@@ -328,8 +353,9 @@ function loadMeasurement(rm, label) {
     `Eaves <b>${L.eaves ?? "—"}</b> · Rakes <b>${L.rakes ?? "—"}</b> · Valleys <b>${L.valleys ?? "—"}</b> · ` +
     `Ridge cap <b>${L.ridge_cap ?? "—"}</b> ft · Penetrations <b>${pen.count ?? "—"}</b>` +
     (rm.warnings.length ? `<div class="warn">⚠ ${rm.warnings.join("; ")}</div>` : "");
-  // code-driven ice & water default: 3' eave band + valleys (same as the CLI)
-  const iw = rp.pyRound((L.eaves || 0) * 3 / 100 + (L.valleys || 0) * 6 / 100, 1);
+  // code-driven ice & water default: 3' eave band + valleys (same as the CLI).
+  // Scopes report only total perimeter (drip_edge) — same fallback the engine uses.
+  const iw = rp.pyRound(((L.eaves ?? L.drip_edge) || 0) * 3 / 100 + (L.valleys || 0) * 6 / 100, 1);
   if (iw > 0) $("s_ice_water_sq").value = iw;
   if (rm.source.address && !$("d_addr1").value) {
     const parts = rm.source.address.split(",");

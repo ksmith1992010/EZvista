@@ -3,11 +3,12 @@
 <title>Vista Code &amp; Supplement Lookup — Measure2Estimate</title>
 <link rel="icon" href="logo.png">
 <script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script><!-- preloaded: parse works even if runtime fetch is blocked (password wall / flaky jobsite network) -->
 <script src="jspdf.umd.min.js"></script>
 <script src="roofparse.js"></script>
 <script src="supplements.js"></script>
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173;--accent:#2e4b44}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
@@ -26,7 +27,7 @@
   .apptitle b{font-size:16px;letter-spacing:.01em}
   .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
   .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
-  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed{border-color:var(--salmon);background:#f3f7f1}
   .drop.armed .dropbig{color:var(--red)}
   .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
   .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
@@ -49,16 +50,16 @@
   .page{flex:1;min-width:0;background:#fff;padding:30px 36px 44px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
   .page h1{margin:0 0 2px;font-size:22px}
   .subttl{color:var(--grey);font-size:12.5px;margin-bottom:6px}
-  .ahj{background:#fff8f7;border:1px solid var(--salmon);border-radius:6px;padding:9px 12px;font-size:12px;margin:12px 0 6px;color:#7a2a28}
+  .ahj{background:#f3f7f1;border:1px solid var(--salmon);border-radius:6px;padding:9px 12px;font-size:12px;margin:12px 0 6px;color:#2e4b44}
   .secbar{background:var(--bar);font-weight:700;font-size:15px;padding:8px 14px;margin-top:20px;display:flex;justify-content:space-between;align-items:center}
   .secbar .cnt{font-weight:400;color:var(--grey);font-size:12px}
   .item{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px}
-  .item.on{border-color:var(--salmon);background:#fff8f7}
+  .item.on{border-color:var(--salmon);background:#f3f7f1}
   .item .h{display:flex;align-items:center;gap:9px}
   .item .h input[type=checkbox]{width:16px;height:16px;accent-color:var(--red)}
   .item .nm{font-weight:700;font-size:13.5px}
   .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
-  .badge.code{background:#ffe3e3;color:#b3261e}
+  .badge.code{background:#e6efe2;color:#2e4b44}
   .badge.standard{background:#e5eefc;color:#1f5bb5}
   .badge.negotiable{background:#eef0f2;color:#6a7078}
   .item .cite{margin-left:auto;font-size:11px;color:var(--grey);font-variant-numeric:tabular-nums}
@@ -77,7 +78,7 @@
   <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
   <a class="on" href="code-lookup.html">Code / Supplement Lookup <span>m2cs</span></a>
   <a href="depreciation.html">Depreciation Request <span>m2dr</span></a>
-  <a href="customers.html">Production 25/26 <span>AR</span></a>
+  <a href="customers.html">Production <span>AR/AP</span></a>
 </div>
 <div class="wrap">
 

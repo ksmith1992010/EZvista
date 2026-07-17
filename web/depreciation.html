@@ -3,10 +3,11 @@
 <title>Vista Depreciation Request — Measure2Estimate</title>
 <link rel="icon" href="logo.png">
 <script src="pdf.min.js"></script>
+<script src="pdf.worker.min.js"></script><!-- preloaded: parse works even if runtime fetch is blocked (password wall / flaky jobsite network) -->
 <script src="jspdf.umd.min.js"></script>
 <script src="supplements.js"></script>
 <style>
-  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#ff3235;--brick:#dd6f6d;--salmon:#fb8a86;--accent:#ff3235}
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--red:#2e4b44;--brick:#4a6b60;--salmon:#7fa173;--accent:#2e4b44}
   *{box-sizing:border-box}
   body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
   .tabs{display:flex;gap:6px;max-width:1340px;margin:14px auto 0;padding:0 14px;flex-wrap:wrap}
@@ -25,7 +26,7 @@
   .apptitle b{font-size:16px;letter-spacing:.01em}
   .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
   .drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fbfbfc}
-  .drop.armed{border-color:var(--salmon);background:#fff5f4}
+  .drop.armed{border-color:var(--salmon);background:#f3f7f1}
   .drop.armed .dropbig{color:var(--red)}
   .dropbig{font-weight:700;font-size:13.5px;color:var(--ink)}
   .dropsub{color:var(--grey);font-size:12px;margin-top:5px}
@@ -71,7 +72,7 @@
   <a href="index.html">Estimate Creator <span>m2e</span></a>
   <a href="m2mo.html">Material Order Generator <span>m2mo</span></a>
   <a class="on" href="depreciation.html">Depreciation Request <span>m2dr</span></a>
-  <a href="customers.html">Production <span>AR</span></a>
+  <a href="customers.html">Production <span>AR/AP</span></a>
 </div>
 <div class="wrap">
 
