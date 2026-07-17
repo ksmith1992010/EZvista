@@ -1,0 +1,696 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Production Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%232e4b44'/><path d='M12 34 32 16l20 18' stroke='%237fa173' stroke-width='6' fill='none'/><rect x='20' y='36' width='24' height='14' fill='%237fa173'/></svg>">
+<style>
+  :root{--ink:#000000;--grey:#81888e;--line:#d9dce0;--bar:#eff0f2;--accent:#2e4b44;--sage:#7fa173;--paid:#0a7a33}
+  *{box-sizing:border-box}
+  body{margin:0;background:#eceef1;font:13px/1.5 Arial,Helvetica,sans-serif;color:var(--ink)}
+  /* password gate */
+  #gate{position:fixed;inset:0;background:#eceef1;display:flex;align-items:center;justify-content:center;z-index:10}
+  .gatecard{background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.12);padding:30px 36px 34px;border-radius:8px;text-align:center;width:340px}
+  .gatecard svg{width:240px;height:auto}
+  .gatecard h1{font-size:16px;margin:6px 0 16px;letter-spacing:.02em}
+  .gatecard input{width:100%;padding:9px;border:1px solid var(--line);border-radius:5px;font:inherit;text-align:center}
+  .gatecard button{margin-top:10px;width:100%;padding:10px;border:0;border-radius:5px;background:var(--accent);color:#fff;font:700 13px Arial;cursor:pointer}
+  #gateerr{color:#b3261e;font-size:12px;margin-top:8px;min-height:15px}
+  /* layout */
+  .wrap{display:flex;gap:18px;max-width:1600px;margin:18px auto;padding:0 14px;align-items:flex-start}
+  @media (max-width:1100px){.wrap{flex-direction:column}.panel{width:100%!important}}
+  .panel{width:330px;flex-shrink:0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px 20px 24px}
+  .panel h2{font-size:14px;margin:22px 0 10px;border-bottom:2px solid var(--bar);padding-bottom:5px;letter-spacing:.02em}
+  .brand{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .brand svg{width:108px;height:auto;flex-shrink:0}
+  .apptitle b{font-size:16px;letter-spacing:.01em}
+  .apptitle span{display:block;font-size:11px;color:var(--grey);margin-top:3px}
+  .status{margin-top:8px;font-size:12px}
+  .status.ok{color:#0a7a33}.status.err{color:#b3261e}
+  label.fld{display:block;font-size:11px;color:var(--grey);margin-top:9px}
+  .panel input[type=text],.panel input[type=number],.panel input[type=date],.panel input[type=password]{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font:inherit}
+  .panel input[type=number]{text-align:right}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+  .trow{display:flex;gap:6px;margin-top:7px}
+  .trow input[type=text]{flex:1}
+  .trow input[type=number]{width:112px}
+  .actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .actions button{flex:1;padding:9px 6px;border:0;border-radius:5px;font:700 12.5px Arial;cursor:pointer;white-space:nowrap}
+  .go{background:var(--accent);color:#fff}
+  .alt{background:var(--bar);color:var(--ink)}
+  .actions input{display:none}
+  .pwbtn{margin-top:12px;width:100%;padding:8px;border:1px solid var(--line);background:#fff;border-radius:5px;color:var(--grey);cursor:pointer;font:inherit}
+  .pwbtn:hover{color:var(--ink);border-color:var(--grey)}
+  /* dashboard */
+  table.dash{width:100%;border-collapse:collapse;margin-top:4px}
+  table.dash td{padding:4px 2px;border-bottom:1px solid var(--bar);font-size:12.5px}
+  table.dash td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  table.dash tr.big td{font-size:14px}
+  table.dash td.pos{color:var(--paid)} table.dash td.neg{color:#b3261e}
+  table.lad{width:100%;border-collapse:collapse;margin-top:4px;font-size:11.5px}
+  table.lad th{color:var(--grey);font-weight:400;text-align:right;padding:2px;border-bottom:1px solid var(--line)}
+  table.lad th:first-child{text-align:left}
+  table.lad td{padding:3px 2px;border-bottom:1px solid var(--bar);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.lad td:first-child{text-align:left;white-space:normal}
+  table.lad tr.met td{color:var(--paid)}
+  /* grid */
+  .page{flex:1;min-width:0;background:#fff;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:12px}
+  .toolbar select{padding:5px;border:1px solid var(--line);border-radius:4px;font:inherit}
+  .toolbar label{display:flex;align-items:center;gap:5px;color:var(--grey)}
+  .toolbar .count{margin-left:auto;color:var(--grey)}
+  .gridwrap{overflow-x:auto}
+  table.grid{border-collapse:collapse;width:100%;min-width:1180px}
+  table.grid th{position:sticky;top:0;background:var(--bar);font-size:11px;padding:6px 4px;text-align:left;cursor:pointer;user-select:none;white-space:nowrap;border-bottom:2px solid var(--line)}
+  table.grid th.num{text-align:right}
+  table.grid th .arrow{color:var(--accent)}
+  table.grid td{border-bottom:1px solid var(--bar);padding:1px 2px;white-space:nowrap}
+  table.grid input[type=text]{width:100%;min-width:60px;padding:3px 4px;border:1px solid transparent;border-radius:3px;font:inherit;background:transparent}
+  table.grid input[type=text]:hover,table.grid input[type=text]:focus{border-color:var(--line);background:#fbfbfc;outline:none}
+  table.grid td.money input{text-align:right;min-width:78px;font-variant-numeric:tabular-nums}
+  table.grid td.chk{text-align:center}
+  table.grid td.chk input{width:15px;height:15px;accent-color:var(--accent);vertical-align:middle}
+  table.grid td.paidchk input{accent-color:var(--paid)}
+  table.grid tr.pifrow td{background:#f2faf4}
+  table.grid td.money.ispaid input{color:var(--paid);text-decoration:line-through}
+  table.grid td.del{text-align:center}
+  table.grid td.del button{border:0;background:none;color:var(--grey);cursor:pointer;font-size:13px;padding:2px 6px}
+  table.grid td.del button:hover{color:#b3261e}
+  .addbtn{margin-top:10px;border:1px dashed var(--line);background:#fff;border-radius:4px;padding:7px 14px;color:var(--grey);cursor:pointer;font:inherit}
+  .addbtn:hover{color:var(--ink);border-color:var(--grey)}
+  .note{font-size:11px;color:var(--grey);margin-top:10px;line-height:1.5}
+</style></head><body>
+
+<!-- Vista Exterior Construction logo (vector, white background) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="vlogo" viewBox="0 0 900 650">
+    <rect width="900" height="650" fill="#ffffff"/>
+    <!-- pines -->
+    <g fill="#7fa173">
+      <polygon points="140,300 118,352 162,352"/>
+      <polygon points="140,332 108,398 172,398"/>
+      <polygon points="140,374 100,452 180,452"/>
+      <rect x="135" y="452" width="10" height="20"/>
+      <polygon points="200,258 176,315 224,315"/>
+      <polygon points="200,294 166,366 234,366"/>
+      <polygon points="200,340 158,426 242,426"/>
+      <rect x="195" y="426" width="10" height="26"/>
+      <polygon points="256,306 236,354 276,354"/>
+      <polygon points="256,336 228,398 284,398"/>
+      <polygon points="256,376 220,452 292,452"/>
+      <rect x="251" y="452" width="10" height="18"/>
+    </g>
+    <!-- long front roof plane (sage) with dark fascia under it -->
+    <polygon points="95,462 480,198 560,255 235,462" fill="#7fa173"/>
+    <polygon points="120,470 548,257 568,272 165,478" fill="#2e4b44"/>
+    <!-- chimney -->
+    <rect x="355" y="172" width="52" height="100" fill="#2e4b44"/>
+    <rect x="344" y="156" width="74" height="20" fill="#2e4b44"/>
+    <rect x="344" y="176" width="74" height="6" fill="#7fa173"/>
+    <!-- main gable -->
+    <polygon points="505,205 330,462 690,462" fill="#2e4b44"/>
+    <g fill="#7fa173">
+      <rect x="468" y="330" width="32" height="32"/>
+      <rect x="508" y="330" width="32" height="32"/>
+      <rect x="468" y="370" width="32" height="32"/>
+      <rect x="508" y="370" width="32" height="32"/>
+    </g>
+    <!-- right double gable (concentric chevrons) -->
+    <polygon points="705,285 575,462 835,462" fill="#2e4b44"/>
+    <polygon points="705,335 615,462 795,462" fill="#ffffff"/>
+    <polygon points="705,368 648,462 762,462" fill="#7fa173"/>
+    <polygon points="705,402 672,462 738,462" fill="#ffffff"/>
+    <!-- ground swoosh -->
+    <path d="M70,492 Q460,452 850,492 L850,504 Q460,466 70,504 Z" fill="#7fa173"/>
+    <!-- wordmark -->
+    <text x="450" y="575" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="64" letter-spacing="6" fill="#2e4b44">VISTA EXTERIOR</text>
+    <text x="450" y="624" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" letter-spacing="13" fill="#40615a">CONSTRUCTION</text>
+    <line x1="140" y1="613" x2="218" y2="613" stroke="#40615a" stroke-width="3"/>
+    <line x1="682" y1="613" x2="760" y2="613" stroke="#40615a" stroke-width="3"/>
+  </symbol>
+</svg>
+
+<div id="gate">
+  <form id="gateform" class="gatecard">
+    <svg viewBox="0 0 900 650"><use href="#vlogo"/></svg>
+    <h1>Production Tracker</h1>
+    <input type="password" id="gatepw" placeholder="Password" autocomplete="current-password" autofocus>
+    <button type="submit">Unlock</button>
+    <div id="gateerr"></div>
+  </form>
+</div>
+
+<div id="app" style="display:none">
+<div class="wrap">
+  <div class="panel">
+    <div class="brand">
+      <svg viewBox="0 0 900 650" role="img" aria-label="Vista Exterior Construction"><use href="#vlogo"/></svg>
+      <div class="apptitle"><b>Production Tracker</b><span>job money tracker · saves on this device</span></div>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="actions">
+      <button class="alt" id="importbtn">Import CSV</button>
+      <input type="file" id="importfile" accept=".csv,text/csv">
+      <button class="go" id="exportbtn">Export CSV</button>
+      <button class="alt" id="clearbtn">Clear all</button>
+    </div>
+
+    <h2>Totals</h2>
+    <table class="dash" id="dash"></table>
+
+    <h2>Goals</h2>
+    <table class="lad" id="ladder"></table>
+
+    <h2>Settings</h2>
+    <div class="g2">
+      <label class="fld">Bank<input type="number" data-set="bank" step="100"></label>
+      <label class="fld">Monthly O/H<input type="number" data-set="monthly_oh" step="100"></label>
+      <label class="fld">Profit / job<input type="number" data-set="profit_per_roof" step="100"></label>
+      <label class="fld">Deadline<input type="date" data-set="deadline"></label>
+      <label class="fld">Pipeline jobs<input type="number" data-set="pipeline_jobs" step="1"></label>
+      <label class="fld">Pipeline avg<input type="number" data-set="pipeline_avg" step="100"></label>
+      <label class="fld">Pipeline 2 jobs<input type="number" data-set="pipeline_b_jobs" step="1"></label>
+      <label class="fld">Pipeline 2 avg<input type="number" data-set="pipeline_b_avg" step="100"></label>
+    </div>
+    <label class="fld" style="margin-top:12px">Goals (name / amount)</label>
+    <div id="targets"></div>
+    <button class="pwbtn" id="pwbtn">Change password…</button>
+
+    <div class="note">Check <b>ACV ✓</b> / <b>RCV ✓</b> when a payment lands — the amount
+    moves from “to collect” into “collected” without deleting the number. Both checked
+    auto-marks PIF. Data saves automatically in this browser only; Export CSV for backup
+    or to move devices.</div>
+  </div>
+
+  <div class="page">
+    <div class="toolbar">
+      <select id="f_rep"><option value="">All reps</option></select>
+      <label><input type="checkbox" id="f_unpaid"> money still out</label>
+      <label><input type="checkbox" id="f_notinstalled"> not installed</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="gridwrap"><table class="grid" id="grid"></table></div>
+    <button class="addbtn" id="addrow">+ Add job</button>
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------- pure logic
+ * Job-row model, CSV import/export, and all dashboard math.
+ * Paid tracking: every ACV / RCV amount keeps its value and gets a paid flag —
+ * checking it moves the money from "to collect" into "collected" while the
+ * gross totals stay put, so history is never lost.
+ */
+window.production = (function () {
+  "use strict";
+
+  var round2 = function (x) { return Math.round((x + Number.EPSILON) * 100) / 100; };
+
+  // ---------------------------------------------------------------- money
+  function parseMoney(s) {
+    if (s == null) return null;
+    if (typeof s === "number") return isFinite(s) ? s : null;
+    var t = String(s).replace(/[$,\s]/g, "");
+    if (!t) return null;
+    var neg = false;
+    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+    var v = parseFloat(t);
+    if (!isFinite(v)) return null;
+    return neg ? -v : v;
+  }
+
+  function fmtMoney(n) {
+    if (n == null || !isFinite(n)) return "";
+    var neg = n < 0;
+    var s = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return (neg ? "-$" : "$") + s;
+  }
+
+  // ---------------------------------------------------------------- rows
+  function blankRow() {
+    return { customer: "", rep: "", claim: "", po: "", date: "",
+             acv: null, acv_paid: false, dep: null, rcv_paid: false,
+             mats: null, labor: null, status: "", installed: false,
+             notes: "", todo: "", pif: false };
+  }
+
+  // ---------------------------------------------------------------- csv
+  // minimal RFC-4180 parser (quoted fields, embedded commas/newlines)
+  function parseCsv(text) {
+    var rows = [], row = [], cur = "", inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { cur += '"'; i++; }
+          else inQ = false;
+        } else cur += c;
+      } else if (c === '"') inQ = true;
+      else if (c === ",") { row.push(cur); cur = ""; }
+      else if (c === "\n" || c === "\r") {
+        if (c === "\r" && text[i + 1] === "\n") i++;
+        row.push(cur); rows.push(row); row = []; cur = "";
+      } else cur += c;
+    }
+    if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  function csvField(v) {
+    var s = v == null ? "" : String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  var EXPORT_HEADER = ["Customer", "Rep", "Claim #", "PO #", "Date",
+                       "ACV", "ACV Paid", "RCV (Dep)", "RCV Paid",
+                       "Mats", "Labor", "Status", "Installed", "Notes", "To Do", "PIF"];
+
+  function exportCsv(rows) {
+    var out = [EXPORT_HEADER.join(",")];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      out.push([
+        r.customer, r.rep, r.claim, r.po, r.date,
+        r.acv == null ? "" : fmtMoney(r.acv), r.acv_paid ? "TRUE" : "FALSE",
+        r.dep == null ? "" : fmtMoney(r.dep), r.rcv_paid ? "TRUE" : "FALSE",
+        r.mats == null ? "" : fmtMoney(r.mats),
+        r.labor == null ? "" : fmtMoney(r.labor),
+        r.status, r.installed ? "YES" : "NO", r.notes, r.todo,
+        r.pif ? "TRUE" : "FALSE",
+      ].map(csvField).join(","));
+    }
+    return out.join("\n");
+  }
+
+  function truthy(s) {
+    var t = String(s == null ? "" : s).trim().toUpperCase();
+    return t === "TRUE" || t === "YES" || t === "Y" || t === "X" || t === "1";
+  }
+
+  function importCsv(text) {
+    var raw = parseCsv(text);
+    if (!raw.length) return { rows: [], warnings: ["empty file"], format: "unknown" };
+
+    var head = raw[0].map(function (h) { return String(h).trim(); });
+    if (head.indexOf("Customer") !== 0 || head.indexOf("ACV Paid") === -1)
+      return { rows: [], warnings: ["unrecognized header — expected this tracker's Export CSV layout"], format: "unknown" };
+
+    var rows = [], warnings = [], skipped = 0;
+    for (var i = 1; i < raw.length; i++) {
+      var rec = raw[i];
+      var r = blankRow();
+      var get = function (name) {
+        var j = head.indexOf(name);
+        return j > -1 && j < rec.length ? rec[j] : "";
+      };
+      r.customer = String(get("Customer")).trim();
+      if (!r.customer) { skipped++; continue; }
+      r.rep = String(get("Rep")).trim();
+      r.claim = String(get("Claim #")).trim();
+      r.po = String(get("PO #")).trim();
+      r.date = String(get("Date")).trim();
+      r.acv = parseMoney(get("ACV"));
+      r.acv_paid = truthy(get("ACV Paid"));
+      r.dep = parseMoney(get("RCV (Dep)"));
+      r.rcv_paid = truthy(get("RCV Paid"));
+      r.mats = parseMoney(get("Mats"));
+      r.labor = parseMoney(get("Labor"));
+      r.status = String(get("Status")).trim();
+      r.installed = truthy(get("Installed"));
+      r.notes = String(get("Notes")).trim();
+      r.todo = String(get("To Do")).trim();
+      r.pif = truthy(get("PIF"));
+      rows.push(r);
+    }
+    if (skipped) warnings.push(skipped + " empty row(s) skipped");
+    return { rows: rows, warnings: warnings, format: "tracker" };
+  }
+
+  // ---------------------------------------------------------------- settings
+  function defaultSettings() {
+    return {
+      bank: 0,
+      monthly_oh: 0,
+      profit_per_roof: 0,
+      pipeline_jobs: 0, pipeline_avg: 0,
+      pipeline_b_jobs: 0, pipeline_b_avg: 0,
+      deadline: "2026-12-31",
+      targets: [
+        { label: "Goal 1", amount: 100000 },
+        { label: "Goal 2", amount: 250000 },
+        { label: "Goal 3", amount: 500000 },
+        { label: "Goal 4", amount: 1000000 },
+      ],
+    };
+  }
+
+  // ---------------------------------------------------------------- math
+  function sum(rows, key) {
+    var t = 0;
+    for (var i = 0; i < rows.length; i++) t += rows[i][key] || 0;
+    return round2(t);
+  }
+
+  function computeTotals(rows, settings) {
+    var s = settings || defaultSettings();
+    var acv = sum(rows, "acv"), dep = sum(rows, "dep");
+    var mats = sum(rows, "mats"), labor = sum(rows, "labor");
+    var collected = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].acv_paid) collected += rows[i].acv || 0;
+      if (rows[i].rcv_paid) collected += rows[i].dep || 0;
+    }
+    collected = round2(collected);
+    var gross = round2(acv + dep);
+    var ml = round2(mats + labor);
+    var net = round2(gross - ml);
+    var cash = round2(net + (s.bank || 0));
+    var projA = round2((s.pipeline_jobs || 0) * (s.pipeline_avg || 0));
+    var projB = round2((s.pipeline_b_jobs || 0) * (s.pipeline_b_avg || 0));
+    return {
+      acv: acv, dep: dep, mats: mats, labor: labor,
+      ml: ml, gross: gross, net: net, bank: round2(s.bank || 0), cash: cash,
+      collected: collected, outstanding: round2(gross - collected),
+      months_oh: s.monthly_oh ? round2(cash / s.monthly_oh) : null,
+      projected_a: projA, projected_b: projB,
+      all_in: round2(cash + projA + projB),
+    };
+  }
+
+  // weeks (fractional, min 0) from `todayISO` to settings.deadline
+  function weeksUntil(deadline, todayISO) {
+    var ms = new Date(deadline + "T00:00:00Z") - new Date(todayISO + "T00:00:00Z");
+    return Math.max(0, ms / (7 * 24 * 3600 * 1000));
+  }
+
+  // Goals ladder: every rung is an absolute cumulative target; left = target −
+  // cash; jobs = left / profit-per-job; contracts/wk = jobs / weeks to deadline.
+  function goalsLadder(totals, settings, todayISO) {
+    var s = settings || defaultSettings();
+    var weeks = weeksUntil(s.deadline, todayISO);
+    return s.targets.map(function (t) {
+      var left = round2(t.amount - totals.cash);
+      var roofs = s.profit_per_roof ? Math.ceil(left / s.profit_per_roof) : null;
+      return {
+        label: t.label, amount: t.amount, left: left, roofs: roofs,
+        weeks: round2(weeks),
+        ctr_per_week: (roofs != null && weeks > 0) ? round2(roofs / weeks) : null,
+        met: left <= 0,
+      };
+    });
+  }
+
+  return {
+    parseMoney: parseMoney, fmtMoney: fmtMoney, round2: round2,
+    blankRow: blankRow,
+    parseCsv: parseCsv, importCsv: importCsv, exportCsv: exportCsv,
+    EXPORT_HEADER: EXPORT_HEADER,
+    defaultSettings: defaultSettings, computeTotals: computeTotals,
+    goalsLadder: goalsLadder, weeksUntil: weeksUntil,
+  };
+})();
+
+/* ---------------------------------------------------------------- app */
+const P = window.production;
+const $ = (id) => document.getElementById(id);
+const LS_KEY = "production_tracker_v1";
+const PW_KEY = "production_tracker_pw";
+const SS_KEY = "production_tracker_unlocked";
+const DEFAULT_PW = "Vista.123";
+
+let state = null;            // {rows, settings}
+let sortKey = null, sortDir = 1;
+let booted = false;
+
+// ---------------------------------------------------------------- password gate
+function currentPw() { try { return localStorage.getItem(PW_KEY) || DEFAULT_PW; } catch (e) { return DEFAULT_PW; } }
+
+function unlock() {
+  $("gate").style.display = "none";
+  $("app").style.display = "";
+  if (!booted) { booted = true; load(); renderSettings(); rerender(); }
+}
+
+$("gateform").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if ($("gatepw").value === currentPw()) {
+    try { sessionStorage.setItem(SS_KEY, "1"); } catch (err) {}
+    $("gatepw").value = "";
+    unlock();
+  } else {
+    $("gateerr").textContent = "Wrong password";
+    $("gatepw").value = "";
+    $("gatepw").focus();
+  }
+});
+
+$("pwbtn").addEventListener("click", () => {
+  const cur = prompt("Current password:");
+  if (cur == null) return;
+  if (cur !== currentPw()) { alert("Wrong current password."); return; }
+  const nw = prompt("New password (at least 4 characters):");
+  if (nw == null) return;
+  if (nw.length < 4) { alert("Password too short — not changed."); return; }
+  const again = prompt("Repeat new password:");
+  if (again !== nw) { alert("Passwords didn't match — not changed."); return; }
+  try { localStorage.setItem(PW_KEY, nw); } catch (e) { alert("Could not save password."); return; }
+  alert("Password changed on this device/browser. Other devices keep their own password. " +
+        "If you forget it, clearing this site's browser data resets the password to the default — " +
+        "but that also erases the table, so keep CSV backups.");
+});
+
+// ---------------------------------------------------------------- persistence
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+
+function load() {
+  try {
+    const s = localStorage.getItem(LS_KEY);
+    if (s) { state = JSON.parse(s); setStatus("Loaded from this device", true); return; }
+  } catch (e) {}
+  state = { rows: [], settings: P.defaultSettings() };
+  setStatus("Blank tracker — add your first job below", true);
+}
+
+function setStatus(msg, ok) {
+  const st = $("status");
+  st.className = "status " + (ok ? "ok" : "err");
+  st.textContent = msg;
+}
+
+// ---------------------------------------------------------------- grid
+const COLS = [
+  { key: "customer", label: "Customer", type: "text" },
+  { key: "rep", label: "Rep", type: "text" },
+  { key: "claim", label: "Claim #", type: "text" },
+  { key: "po", label: "PO #", type: "text" },
+  { key: "date", label: "Date", type: "text" },
+  { key: "acv", label: "ACV", type: "money" },
+  { key: "acv_paid", label: "ACV ✓", type: "paid" },
+  { key: "dep", label: "RCV (Dep)", type: "money" },
+  { key: "rcv_paid", label: "RCV ✓", type: "paid" },
+  { key: "mats", label: "Mats", type: "money" },
+  { key: "labor", label: "Labor", type: "money" },
+  { key: "status", label: "Status", type: "text" },
+  { key: "installed", label: "Installed", type: "chk" },
+  { key: "notes", label: "Notes", type: "text" },
+  { key: "todo", label: "To Do", type: "text" },
+  { key: "pif", label: "PIF", type: "chk" },
+];
+
+function visibleRows() {
+  const rep = $("f_rep").value;
+  const unpaid = $("f_unpaid").checked;
+  const notinst = $("f_notinstalled").checked;
+  let idx = state.rows.map((r, i) => i).filter((i) => {
+    const r = state.rows[i];
+    if (rep && r.rep !== rep) return false;
+    if (unpaid && !(((r.acv || 0) !== 0 && !r.acv_paid) || ((r.dep || 0) !== 0 && !r.rcv_paid))) return false;
+    if (notinst && r.installed) return false;
+    return true;
+  });
+  if (sortKey) {
+    idx.sort((a, b) => {
+      const va = state.rows[a][sortKey], vb = state.rows[b][sortKey];
+      const na = va == null || va === "", nb = vb == null || vb === "";
+      if (na && nb) return 0; if (na) return 1; if (nb) return -1;
+      if (typeof va === "number" || typeof vb === "number") return ((va || 0) - (vb || 0)) * sortDir;
+      return String(va).localeCompare(String(vb), undefined, { sensitivity: "base" }) * sortDir;
+    });
+  }
+  return idx;
+}
+
+function renderGrid() {
+  const g = $("grid");
+  const idx = visibleRows();
+  let h = "<thead><tr>";
+  for (const c of COLS) {
+    const arrow = sortKey === c.key ? ` <span class="arrow">${sortDir > 0 ? "▲" : "▼"}</span>` : "";
+    h += `<th class="${c.type === "money" ? "num" : ""}" data-sort="${c.key}">${c.label}${arrow}</th>`;
+  }
+  h += "<th></th></tr></thead><tbody>";
+  for (const i of idx) {
+    const r = state.rows[i];
+    h += `<tr data-i="${i}" class="${r.pif ? "pifrow" : ""}">`;
+    for (const c of COLS) {
+      if (c.type === "money") {
+        const paid = (c.key === "acv" && r.acv_paid) || (c.key === "dep" && r.rcv_paid);
+        h += `<td class="money ${paid ? "ispaid" : ""}"><input type="text" data-k="${c.key}" value="${r[c.key] == null ? "" : P.fmtMoney(r[c.key])}"></td>`;
+      } else if (c.type === "paid" || c.type === "chk") {
+        h += `<td class="chk ${c.type === "paid" ? "paidchk" : ""}"><input type="checkbox" data-k="${c.key}" ${r[c.key] ? "checked" : ""}></td>`;
+      } else {
+        const v = String(r[c.key] == null ? "" : r[c.key]).replace(/"/g, "&quot;");
+        h += `<td><input type="text" data-k="${c.key}" value="${v}"></td>`;
+      }
+    }
+    h += `<td class="del"><button title="Delete row" data-del="${i}">✕</button></td></tr>`;
+  }
+  h += "</tbody>";
+  g.innerHTML = h;
+  $("count").textContent = idx.length + " of " + state.rows.length + " jobs";
+}
+
+function renderRepFilter() {
+  const sel = $("f_rep");
+  const cur = sel.value;
+  const reps = [...new Set(state.rows.map((r) => r.rep).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All reps</option>' +
+    reps.map((r) => `<option${r === cur ? " selected" : ""}>${r}</option>`).join("");
+}
+
+// ---------------------------------------------------------------- dashboard
+function renderDash() {
+  const t = P.computeTotals(state.rows, state.settings);
+  const M = P.fmtMoney;
+  const row = (l, v, cls = "", big = false) =>
+    `<tr${big ? ' class="big"' : ""}><td>${l}</td><td class="num ${cls}">${v}</td></tr>`;
+  $("dash").innerHTML =
+    row("ACV", M(t.acv)) + row("RCV (Dep)", M(t.dep)) +
+    row("Gross $", M(t.gross)) +
+    row("Collected ✓", M(t.collected), "pos") +
+    row("To collect", M(t.outstanding), t.outstanding > 0 ? "" : "pos") +
+    row("Mats + Labor", M(t.ml)) +
+    row("$ − ML", M(t.net)) + row("Bank", M(t.bank)) +
+    row("$$ Total", M(t.cash), t.cash >= 0 ? "pos" : "neg", true) +
+    row("Months of O/H", t.months_oh == null ? "—" : t.months_oh.toFixed(1)) +
+    row("Pipeline proj.", M(t.projected_a)) +
+    row("+ Pipeline 2", M(t.projected_b)) +
+    row("All-in proj.", M(t.all_in), "", true);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const lad = P.goalsLadder(t, state.settings, today);
+  $("ladder").innerHTML =
+    "<tr><th>Goal</th><th>Left</th><th>Jobs</th><th>/wk</th></tr>" +
+    lad.map((g) =>
+      `<tr class="${g.met ? "met" : ""}"><td>${String(g.label).replace(/</g, "&lt;")}</td>` +
+      `<td>${g.met ? "MET ✓" : M(g.left)}</td>` +
+      `<td>${g.met || g.roofs == null ? "—" : g.roofs}</td>` +
+      `<td>${g.met || g.ctr_per_week == null ? "—" : g.ctr_per_week.toFixed(2)}</td></tr>`).join("");
+}
+
+function renderSettings() {
+  document.querySelectorAll("[data-set]").forEach((inp) => {
+    inp.value = state.settings[inp.dataset.set];
+  });
+  $("targets").innerHTML = state.settings.targets.map((t, i) =>
+    `<div class="trow"><input type="text" data-tlabel="${i}" value="${String(t.label).replace(/"/g, "&quot;")}">` +
+    `<input type="number" data-target="${i}" step="1000" value="${t.amount}"></div>`).join("");
+}
+
+function rerender() { renderRepFilter(); renderGrid(); renderDash(); }
+
+// ---------------------------------------------------------------- events
+$("grid").addEventListener("change", (e) => {
+  const inp = e.target;
+  const tr = inp.closest("tr");
+  if (!tr || !inp.dataset.k) return;
+  const r = state.rows[+tr.dataset.i];
+  const col = COLS.find((c) => c.key === inp.dataset.k);
+  if (col.type === "money") r[col.key] = P.parseMoney(inp.value);
+  else if (col.type === "paid" || col.type === "chk") r[col.key] = inp.checked;
+  else r[col.key] = inp.value.trim();
+  if (r.acv_paid && r.rcv_paid) r.pif = true;   // both payments in -> paid in full
+  save(); rerender();
+});
+
+$("grid").addEventListener("click", (e) => {
+  const del = e.target.dataset && e.target.dataset.del;
+  if (del != null) {
+    const r = state.rows[+del];
+    if (confirm(`Delete row "${r.customer || "(blank)"}"? With the paid checkboxes you don't need to delete a row to mark it collected.`)) {
+      state.rows.splice(+del, 1); save(); rerender();
+    }
+    return;
+  }
+  const th = e.target.closest("th");
+  if (th && th.dataset.sort) {
+    if (sortKey === th.dataset.sort) { if (sortDir === 1) sortDir = -1; else { sortKey = null; sortDir = 1; } }
+    else { sortKey = th.dataset.sort; sortDir = 1; }
+    renderGrid();
+  }
+});
+
+$("addrow").addEventListener("click", () => {
+  state.rows.push(P.blankRow());
+  sortKey = null;
+  save(); rerender();
+  const rows = $("grid").querySelectorAll("tbody tr");
+  const last = rows[rows.length - 1];
+  if (last) last.querySelector("input").focus();
+});
+
+["f_rep", "f_unpaid", "f_notinstalled"].forEach((id) => $(id).addEventListener("change", renderGrid));
+
+document.querySelector(".panel").addEventListener("change", (e) => {
+  const inp = e.target;
+  if (inp.dataset.set) {
+    state.settings[inp.dataset.set] = inp.type === "number" ? (+inp.value || 0) : inp.value;
+    save(); renderDash();
+  } else if (inp.dataset.target != null) {
+    state.settings.targets[+inp.dataset.target].amount = +inp.value || 0;
+    save(); renderDash();
+  } else if (inp.dataset.tlabel != null) {
+    state.settings.targets[+inp.dataset.tlabel].label = inp.value;
+    save(); renderDash();
+  }
+});
+
+$("exportbtn").addEventListener("click", () => {
+  const csv = P.exportCsv(state.rows);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "Production " + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$("importbtn").addEventListener("click", () => $("importfile").click());
+$("importfile").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const { rows, warnings } = P.importCsv(await f.text());
+    if (!rows.length) throw new Error(warnings.join("; ") || "no job rows found");
+    if (!confirm(`Import ${rows.length} jobs from ${f.name}? This replaces the current table.`)) return;
+    state.rows = rows;
+    save(); rerender();
+    setStatus(`Imported ${rows.length} jobs` + (warnings.length ? " · " + warnings.join("; ") : ""), true);
+  } catch (err) {
+    setStatus("Import failed: " + err.message, false);
+  }
+  e.target.value = "";
+});
+
+$("clearbtn").addEventListener("click", () => {
+  if (!confirm("Erase ALL jobs and reset settings on this device? Export CSV first if unsure.")) return;
+  localStorage.removeItem(LS_KEY);
+  load();
+  rerender(); renderSettings();
+});
+
+// ---------------------------------------------------------------- boot
+try { if (sessionStorage.getItem(SS_KEY) === "1") unlock(); } catch (e) {}
+</script>
+</body></html>
